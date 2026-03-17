@@ -1,0 +1,52 @@
+import { NextResponse } from "next/server";
+import { getStripe } from "@/lib/stripe";
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { restaurant_id, amount_cents } = body;
+
+    if (!restaurant_id || typeof restaurant_id !== "string") {
+      return NextResponse.json(
+        { error: "restaurant_id es obligatorio." },
+        { status: 400 }
+      );
+    }
+
+    if (!amount_cents || typeof amount_cents !== "number" || amount_cents < 50) {
+      return NextResponse.json(
+        { error: "El importe mínimo es 0,50 €." },
+        { status: 400 }
+      );
+    }
+
+    if (amount_cents > 50000) {
+      return NextResponse.json(
+        { error: "El importe máximo es 500,00 €." },
+        { status: 400 }
+      );
+    }
+
+    const paymentIntent = await getStripe().paymentIntents.create({
+      amount: amount_cents,
+      currency: "eur",
+      metadata: {
+        restaurant_id,
+        source: "mipropina",
+      },
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    return NextResponse.json({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    console.error("[create-payment] Error:", error);
+    return NextResponse.json(
+      { error: "Error al crear el pago." },
+      { status: 500 }
+    );
+  }
+}
