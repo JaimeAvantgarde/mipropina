@@ -43,9 +43,10 @@ export async function POST(request: Request) {
       clientSecret: paymentIntent.client_secret,
     });
   } catch (error) {
-    console.error("[create-payment] Error:", error);
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    console.error("[create-payment] Error:", message);
     return NextResponse.json(
-      { error: "Error al crear el pago." },
+      { error: message },
       { status: 500 }
     );
   }
