@@ -107,9 +107,25 @@ export default function RegistroRestaurantePage() {
         const supabase = createClient();
         const ext = logoFile.name.split(".").pop();
         const path = `restaurants/${data.restaurant.id}/logo.${ext}`;
-        await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from("logos")
           .upload(path, logoFile, { upsert: true });
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from("logos")
+            .getPublicUrl(path);
+
+          // Save logo URL to restaurant record
+          await fetch("/api/restaurant/update", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: data.restaurant.id,
+              logo_url: urlData.publicUrl,
+            }),
+          });
+        }
       }
 
       // 3. Send magic link to the owner's email

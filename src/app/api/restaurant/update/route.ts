@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, slug, logo_emoji } = body;
+    const { id } = body;
 
     if (!id || typeof id !== "string") {
       return NextResponse.json(
@@ -13,42 +13,41 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!name?.trim()) {
-      return NextResponse.json(
-        { error: "El nombre es obligatorio." },
-        { status: 400 }
-      );
+    // Build update object with only provided fields
+    const updates: Record<string, string> = {};
+
+    if (body.name?.trim()) updates.name = body.name.trim();
+    if (body.logo_emoji) updates.logo_emoji = body.logo_emoji;
+    if (body.logo_url) updates.logo_url = body.logo_url;
+
+    // Slug requires uniqueness check
+    if (body.slug?.trim()) {
+      const { data: existingSlug } = await supabaseAdmin
+        .from("restaurant")
+        .select("id")
+        .eq("slug", body.slug.trim())
+        .neq("id", id)
+        .single();
+
+      if (existingSlug) {
+        return NextResponse.json(
+          { error: "Esta URL ya está en uso por otro restaurante." },
+          { status: 409 }
+        );
+      }
+      updates.slug = body.slug.trim();
     }
 
-    if (!slug?.trim()) {
+    if (Object.keys(updates).length === 0) {
       return NextResponse.json(
-        { error: "La URL (slug) es obligatoria." },
+        { error: "No hay campos para actualizar." },
         { status: 400 }
-      );
-    }
-
-    // Check slug uniqueness (excluding current restaurant)
-    const { data: existingSlug } = await supabaseAdmin
-      .from("restaurant")
-      .select("id")
-      .eq("slug", slug.trim())
-      .neq("id", id)
-      .single();
-
-    if (existingSlug) {
-      return NextResponse.json(
-        { error: "Esta URL ya está en uso por otro restaurante." },
-        { status: 409 }
       );
     }
 
     const { data: restaurant, error } = await supabaseAdmin
       .from("restaurant")
-      .update({
-        name: name.trim(),
-        slug: slug.trim(),
-        logo_emoji: logo_emoji || "🍽️",
-      })
+      .update(updates)
       .eq("id", id)
       .select()
       .single();
