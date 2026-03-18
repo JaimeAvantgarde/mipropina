@@ -62,7 +62,7 @@ export default function TipPage({ params }: PageProps) {
           {/* Restaurant header */}
           <div className="text-center mb-8">
             <div className="text-6xl mb-3 leading-none">{restaurant.logo_emoji}</div>
-            <h1 className="font-serif text-2xl text-[#0D1B1E] leading-tight">
+            <h1 className="font-[family-name:var(--font-serif)] text-2xl text-[#0D1B1E] leading-tight">
               {restaurant.name}
             </h1>
           </div>
