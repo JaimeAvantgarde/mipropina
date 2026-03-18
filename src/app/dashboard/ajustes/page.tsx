@@ -18,6 +18,12 @@ export default function AjustesPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [connectingStripe, setConnectingStripe] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState<{
+    charges_enabled?: boolean;
+    payouts_enabled?: boolean;
+    details_submitted?: boolean;
+  } | null>(null);
 
   // Populate form from real data
   useEffect(() => {
@@ -25,8 +31,35 @@ export default function AjustesPage() {
       setName(data.restaurant.name);
       setSlug(data.restaurant.slug);
       setSelectedEmoji(data.restaurant.logo_emoji || "🍽️");
+
+      // Fetch Stripe Connect status if connected
+      if (data.restaurant.stripe_account_id) {
+        fetch(`/api/stripe/connect/status?account_id=${data.restaurant.stripe_account_id}`)
+          .then((r) => r.json())
+          .then(setStripeStatus)
+          .catch(() => {});
+      }
     }
   }, [data?.restaurant]);
+
+  const handleConnectStripe = async () => {
+    if (!data?.restaurant) return;
+    setConnectingStripe(true);
+    try {
+      const res = await fetch("/api/stripe/connect/create-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurant_id: data.restaurant.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      // Redirect to Stripe onboarding
+      window.location.href = json.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al conectar con Stripe");
+      setConnectingStripe(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!data?.restaurant) return;
@@ -160,28 +193,57 @@ export default function AjustesPage() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-[#0D1B1E]">
-              Stripe Connect
+              Cuenta de pagos
             </h3>
-            <Badge variant={data?.restaurant.stripe_account_id ? "active" : "pending"}>
-              {data?.restaurant.stripe_account_id ? "Conectado" : "No conectado"}
-            </Badge>
+            {data?.restaurant.stripe_account_id ? (
+              <Badge variant={stripeStatus?.charges_enabled ? "active" : "pending"}>
+                {stripeStatus?.charges_enabled ? "Activa" : stripeStatus?.details_submitted ? "En revisión" : "Incompleta"}
+              </Badge>
+            ) : (
+              <Badge variant="pending">No conectada</Badge>
+            )}
           </div>
-          <p className="text-sm text-gray-500 mb-5">
-            Conecta tu cuenta de Stripe para recibir pagos y transferir propinas
-            a tu equipo de forma automatica.
-          </p>
-          <Button variant="secondary">
-            <span className="flex items-center gap-2">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect width="20" height="20" rx="4" fill="#635BFF" />
-                <path
-                  d="M9.3 8.3c0-.5.4-.7 1-.7.9 0 2 .3 2.9.8V6c-1-.4-1.9-.5-2.9-.5-2.4 0-3.9 1.2-3.9 3.3 0 3.2 4.4 2.7 4.4 4.1 0 .6-.5.8-1.2.8-1 0-2.3-.4-3.3-1v2.5c1.1.5 2.2.7 3.3.7 2.4 0 4.1-1.2 4.1-3.3 0-3.5-4.4-2.9-4.4-4.3z"
-                  fill="white"
-                />
-              </svg>
-              Conectar Stripe
-            </span>
-          </Button>
+
+          {data?.restaurant.stripe_account_id && stripeStatus ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F5FAF7]">
+                <div className={`w-3 h-3 rounded-full ${stripeStatus.charges_enabled ? "bg-[#2ECC87]" : "bg-[#F59E0B]"}`} />
+                <span className="text-sm text-[#0D1B1E]">
+                  {stripeStatus.charges_enabled ? "Puede recibir pagos" : "Pagos pendientes de activación"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F5FAF7]">
+                <div className={`w-3 h-3 rounded-full ${stripeStatus.payouts_enabled ? "bg-[#2ECC87]" : "bg-[#F59E0B]"}`} />
+                <span className="text-sm text-[#0D1B1E]">
+                  {stripeStatus.payouts_enabled ? "Transferencias SEPA activas" : "Transferencias pendientes de activación"}
+                </span>
+              </div>
+              {!stripeStatus.charges_enabled && (
+                <Button variant="secondary" onClick={handleConnectStripe} loading={connectingStripe}>
+                  Completar configuración
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-gray-500 mb-5">
+                Conecta tu cuenta bancaria para recibir las propinas de tus clientes.
+                Se te pedirá verificar tu identidad (obligatorio por ley).
+              </p>
+              <Button onClick={handleConnectStripe} loading={connectingStripe}>
+                <span className="flex items-center gap-2">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <rect width="20" height="20" rx="4" fill="#635BFF" />
+                    <path
+                      d="M9.3 8.3c0-.5.4-.7 1-.7.9 0 2 .3 2.9.8V6c-1-.4-1.9-.5-2.9-.5-2.4 0-3.9 1.2-3.9 3.3 0 3.2 4.4 2.7 4.4 4.1 0 .6-.5.8-1.2.8-1 0-2.3-.4-3.3-1v2.5c1.1.5 2.2.7 3.3.7 2.4 0 4.1-1.2 4.1-3.3 0-3.5-4.4-2.9-4.4-4.3z"
+                      fill="white"
+                    />
+                  </svg>
+                  Conectar cuenta bancaria
+                </span>
+              </Button>
+            </>
+          )}
         </Card>
 
         {/* Danger zone */}
