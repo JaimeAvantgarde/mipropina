@@ -1,18 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Link from "next/link";
 
-type Step = "code" | "form" | "success";
+function RegistroContent() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
-export default function RegistroPage() {
-  const [step, setStep] = useState<Step>("code");
-  const [inviteCode, setInviteCode] = useState("");
-  const [restaurantName, setRestaurantName] = useState("");
+  const [step, setStep] = useState<"loading" | "form" | "success" | "invalid">("loading");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Pre-filled from invite
+  const [restaurantName, setRestaurantName] = useState("");
+  const [inviteName, setInviteName] = useState("");
 
   // Form fields
   const [name, setName] = useState("");
@@ -20,46 +24,35 @@ export default function RegistroPage() {
   const [phone, setPhone] = useState("");
   const [iban, setIban] = useState("");
 
-  function formatInviteCode(value: string): string {
-    const clean = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    if (clean.length <= 2) return clean;
-    return `MP-${clean.slice(2, 8)}`;
-  }
-
-  function handleCodeChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value;
-    if (raw === "") {
-      setInviteCode("");
+  useEffect(() => {
+    if (!token) {
+      setStep("invalid");
       return;
     }
-    setInviteCode(formatInviteCode(raw));
-  }
 
-  async function validateCode(e: React.FormEvent) {
-    e.preventDefault();
-    if (inviteCode.length < 5) return;
+    // TODO: In production, validate token against DB
+    // const { data } = await supabase.from("invite_codes")
+    //   .select("*, restaurant:restaurants(name)")
+    //   .eq("code", token)
+    //   .eq("used", false)
+    //   .gt("expires_at", new Date().toISOString())
+    //   .single();
 
-    setLoading(true);
-    setError("");
-
-    try {
-      // Mock validation: any code starting with MP- is valid
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      if (!inviteCode.startsWith("MP-")) {
-        setError("Código de invitación no válido.");
-        return;
+    // Mock: simulate token validation
+    const timer = setTimeout(() => {
+      // Any 32-char token is "valid" in dev
+      if (token.length >= 10) {
+        setRestaurantName("La Tasca de María");
+        setInviteName("Juan");
+        setName("Juan");
+        setStep("form");
+      } else {
+        setStep("invalid");
       }
+    }, 500);
 
-      // Mock restaurant name
-      setRestaurantName("La Tasca de María");
-      setStep("form");
-    } catch {
-      setError("Error al validar el código. Inténtalo de nuevo.");
-    } finally {
-      setLoading(false);
-    }
-  }
+    return () => clearTimeout(timer);
+  }, [token]);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -69,7 +62,10 @@ export default function RegistroPage() {
     setError("");
 
     try {
-      // Mock registration
+      // TODO: In production:
+      // 1. Create Supabase auth user
+      // 2. Create staff record linked to restaurant
+      // 3. Mark invite as used
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setStep("success");
     } catch {
@@ -79,185 +75,155 @@ export default function RegistroPage() {
     }
   }
 
+  // Loading state
+  if (step === "loading") {
+    return (
+      <div className="bg-white rounded-2xl p-8 shadow-md text-center">
+        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#2ECC87]" />
+        <p className="text-sm text-gray-500">Verificando invitación...</p>
+      </div>
+    );
+  }
+
+  // Invalid / no token
+  if (step === "invalid") {
+    return (
+      <div className="bg-white rounded-2xl p-8 shadow-md text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+          <svg className="h-8 w-8 text-[#EF4444]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-[#0D1B1E] mb-2">
+          Enlace no válido
+        </h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Este enlace de invitación no existe o ha expirado. Pide a tu gerente que te envíe uno nuevo.
+        </p>
+        <Link href="/">
+          <Button variant="secondary" className="w-full">
+            Volver al inicio
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Success
+  if (step === "success") {
+    return (
+      <div className="bg-white rounded-2xl p-8 shadow-md text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F5E9]">
+          <svg className="h-8 w-8 text-[#2ECC87]" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-[#0D1B1E] mb-2">
+          ¡Bienvenido al equipo!
+        </h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Tu cuenta en <strong>{restaurantName}</strong> está lista. Ya puedes acceder y ver tus propinas.
+        </p>
+        <Link href="/auth/login">
+          <Button className="w-full">
+            Acceder a mi cuenta
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Registration form
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="bg-white rounded-2xl p-8 shadow-md">
+      {/* Restaurant badge */}
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center gap-2 rounded-full bg-[#E8F5E9] px-4 py-1.5 text-sm font-semibold text-[#1B5E20] mb-3">
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+          Invitación verificada
+        </div>
+        <h2 className="text-xl font-bold text-[#0D1B1E] mb-1">
+          Únete a {restaurantName}
+        </h2>
+        <p className="text-sm text-gray-500">
+          {inviteName ? `Hola ${inviteName}, completa` : "Completa"} tus datos para empezar a recibir propinas.
+        </p>
+      </div>
+
+      <form onSubmit={handleRegister} className="flex flex-col gap-4">
+        <Input
+          label="Nombre completo"
+          placeholder="Tu nombre"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          autoFocus
+        />
+
+        <Input
+          label="Email"
+          type="email"
+          placeholder="tu@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <Input
+          label="Teléfono"
+          type="tel"
+          placeholder="+34 600 000 000"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+
+        <Input
+          label="IBAN (para recibir tus propinas)"
+          placeholder="ES00 0000 0000 0000 0000 0000"
+          value={iban}
+          onChange={(e) => setIban(e.target.value.toUpperCase())}
+        />
+        <p className="text-xs text-gray-400 -mt-2">
+          Puedes añadirlo más tarde desde tu perfil.
+        </p>
+
+        {error && (
+          <p className="text-sm text-[#EF4444] font-medium">{error}</p>
+        )}
+
+        <Button type="submit" loading={loading} className="w-full mt-2">
+          Crear mi cuenta
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+export default function RegistroPage() {
+  return (
+    <div className="min-h-screen bg-[#F5FAF7] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/">
-            <h1 className="text-3xl font-serif text-dark tracking-tight">
-              mipropina
-            </h1>
+            <span className="font-[family-name:var(--font-serif)] text-3xl text-[#0D1B1E]">
+              mi<span className="text-[#2ECC87]">propina</span>
+            </span>
           </Link>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl p-8 shadow-md">
-          {step === "code" && (
-            <>
-              <h2 className="text-xl font-bold text-dark text-center mb-2">
-                Únete a tu equipo
-              </h2>
-              <p className="text-sm text-foreground/60 text-center mb-6">
-                Introduce el código de invitación que te ha dado tu gerente.
-              </p>
-
-              <form onSubmit={validateCode} className="flex flex-col gap-4">
-                <Input
-                  label="Código de invitación"
-                  placeholder="MP-XXXXXX"
-                  value={inviteCode}
-                  onChange={handleCodeChange}
-                  maxLength={9}
-                  autoFocus
-                  className="text-center text-lg font-semibold tracking-widest"
-                />
-
-                {error && (
-                  <p className="text-[13px] text-error font-medium" role="alert">
-                    {error}
-                  </p>
-                )}
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  loading={loading}
-                  className="w-full mt-2"
-                  disabled={inviteCode.length < 5}
-                >
-                  Validar código
-                </Button>
-              </form>
-            </>
-          )}
-
-          {step === "form" && (
-            <>
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-semibold mb-3">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.5 12.75l6 6 9-13.5"
-                    />
-                  </svg>
-                  Código válido
-                </div>
-                <h2 className="text-xl font-bold text-dark mb-1">
-                  Crea tu cuenta
-                </h2>
-                <p className="text-sm text-foreground/60">
-                  Te han invitado a{" "}
-                  <span className="font-semibold text-dark">
-                    {restaurantName}
-                  </span>
-                </p>
-              </div>
-
-              <form onSubmit={handleRegister} className="flex flex-col gap-4">
-                <Input
-                  label="Nombre completo"
-                  placeholder="Juan García"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  autoFocus
-                />
-
-                <Input
-                  label="Email"
-                  type="email"
-                  placeholder="juan@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-
-                <Input
-                  label="Teléfono"
-                  type="tel"
-                  placeholder="+34 600 000 000"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  autoComplete="tel"
-                />
-
-                <Input
-                  label="IBAN (opcional)"
-                  placeholder="ES00 0000 0000 0000 0000 0000"
-                  value={iban}
-                  onChange={(e) => setIban(e.target.value.toUpperCase())}
-                />
-
-                {error && (
-                  <p className="text-[13px] text-error font-medium" role="alert">
-                    {error}
-                  </p>
-                )}
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  loading={loading}
-                  className="w-full mt-2"
-                >
-                  Crear mi cuenta
-                </Button>
-              </form>
-            </>
-          )}
-
-          {step === "success" && (
-            <div className="text-center py-4">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-primary"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2.5}
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4.5 12.75l6 6 9-13.5"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-xl font-bold text-dark mb-2">
-                ¡Cuenta creada!
-              </h2>
-              <p className="text-[15px] text-foreground mb-6">
-                Ya puedes acceder con tu email.
-              </p>
-              <Link href="/auth/login">
-                <Button size="lg" className="w-full">
-                  Ir a iniciar sesión
-                </Button>
-              </Link>
+        <Suspense
+          fallback={
+            <div className="bg-white rounded-2xl p-8 shadow-md text-center">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#2ECC87]" />
+              <p className="text-sm text-gray-500">Cargando...</p>
             </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-foreground/60 mt-6">
-          ¿Ya tienes cuenta?{" "}
-          <Link
-            href="/auth/login"
-            className="text-primary font-semibold hover:underline"
-          >
-            Inicia sesión
-          </Link>
-        </p>
+          }
+        >
+          <RegistroContent />
+        </Suspense>
       </div>
     </div>
   );

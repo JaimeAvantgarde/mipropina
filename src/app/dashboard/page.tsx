@@ -6,6 +6,7 @@ import { formatCents } from "@/lib/utils";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { TipHistory } from "@/components/dashboard/tip-history";
 import { DistributeModal } from "@/components/dashboard/distribute-modal";
+import { QRCard } from "@/components/dashboard/qr-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -73,6 +74,11 @@ export default function DashboardPage() {
       {/* Tip history */}
       <div className="mb-8">
         <TipHistory tips={mockTips} />
+      </div>
+
+      {/* QR Code */}
+      <div className="mb-8">
+        <QRCard slug="la-tasca-de-maria" restaurantName="La Tasca de María" />
       </div>
 
       {/* Quick team overview */}

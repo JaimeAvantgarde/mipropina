@@ -12,7 +12,6 @@ interface SidebarProps {
 const navItems = [
   { emoji: "📊", label: "Vista general", href: "/dashboard" },
   { emoji: "👥", label: "Equipo", href: "/dashboard/equipo" },
-  { emoji: "📱", label: "Código QR", href: "/dashboard/qr" },
   { emoji: "⚙️", label: "Ajustes", href: "/dashboard/ajustes" },
 ];
 

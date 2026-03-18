@@ -3,6 +3,7 @@ export type Restaurant = {
   name: string;
   slug: string;
   logo_emoji: string;
+  logo_url: string | null;
   theme_color: string;
   owner_id: string;
   stripe_account_id: string | null;
