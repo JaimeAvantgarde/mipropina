@@ -15,6 +15,7 @@ export type StaffRole = "owner" | "waiter";
 export type Staff = {
   id: string;
   restaurant_id: string;
+  auth_user_id: string | null;
   name: string;
   email: string;
   phone: string;

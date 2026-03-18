@@ -1,10 +1,19 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import AmountGrid from "@/components/tipping/amount-grid";
 import CustomAmount from "@/components/tipping/custom-amount";
 import PaymentForm from "@/components/tipping/payment-form";
 import { cn } from "@/lib/utils";
+
+type Restaurant = {
+  id: string;
+  name: string;
+  slug: string;
+  logo_emoji: string | null;
+  logo_url: string | null;
+  theme_color: string;
+};
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -13,18 +22,32 @@ type PageProps = {
 export default function TipPage({ params }: PageProps) {
   const { slug } = use(params);
 
-  // Mock restaurant — will be replaced by Supabase fetch
-  const restaurant = {
-    id: "demo",
-    name: "La Tasca de Maria",
-    slug,
-    logo_emoji: "\uD83C\uDF77",
-    theme_color: "#2ECC87",
-  };
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customValue, setCustomValue] = useState("");
   const [customExpanded, setCustomExpanded] = useState(false);
+
+  useEffect(() => {
+    async function fetchRestaurant() {
+      try {
+        const res = await fetch(`/api/restaurant/${slug}`);
+        if (!res.ok) {
+          setError("Restaurante no encontrado");
+          return;
+        }
+        const data = await res.json();
+        setRestaurant(data);
+      } catch {
+        setError("Error al cargar el restaurante");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRestaurant();
+  }, [slug]);
 
   /* Derived amount in cents */
   let amountCents: number | null = null;
@@ -49,6 +72,30 @@ export default function TipPage({ params }: PageProps) {
     if (next) {
       setSelectedAmount(null);
     }
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#F5FAF7] flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#2ECC87] border-t-transparent rounded-full animate-spin" />
+      </main>
+    );
+  }
+
+  if (error || !restaurant) {
+    return (
+      <main className="min-h-screen bg-[#F5FAF7] flex flex-col items-center justify-center px-4">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
+          <h1 className="font-[family-name:var(--font-serif)] text-2xl text-[#0D1B1E] mb-2">
+            Restaurante no encontrado
+          </h1>
+          <p className="text-sm text-[#1A3C34]/60">
+            El enlace no es correcto o el restaurante ya no existe.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (

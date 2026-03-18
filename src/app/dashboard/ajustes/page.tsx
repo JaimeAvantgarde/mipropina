@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDashboard } from "@/lib/dashboard-context";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,15 +10,79 @@ import { Badge } from "@/components/ui/badge";
 const FOOD_EMOJIS = ["🍽️", "🍕", "🍔", "🍣", "🌮", "🥘", "🍷", "☕", "🍰", "🥗"];
 
 export default function AjustesPage() {
-  const [name, setName] = useState("La Tasca de María");
-  const [slug, setSlug] = useState("la-tasca-de-maria");
-  const [selectedEmoji, setSelectedEmoji] = useState("🍽️");
-  const [saved, setSaved] = useState(false);
+  const { data, loading, refetch } = useDashboard();
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [selectedEmoji, setSelectedEmoji] = useState("🍽️");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  // Populate form from real data
+  useEffect(() => {
+    if (data?.restaurant) {
+      setName(data.restaurant.name);
+      setSlug(data.restaurant.slug);
+      setSelectedEmoji(data.restaurant.logo_emoji || "🍽️");
+    }
+  }, [data?.restaurant]);
+
+  const handleSave = async () => {
+    if (!data?.restaurant) return;
+
+    setSaving(true);
+    setError("");
+    setSaved(false);
+
+    try {
+      const res = await fetch("/api/restaurant/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: data.restaurant.id,
+          name: name.trim(),
+          slug: slug.trim(),
+          logo_emoji: selectedEmoji,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Error al guardar");
+      }
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      refetch();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar los cambios");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-8">
+          <div className="h-9 bg-gray-200 rounded w-64 animate-pulse mb-2" />
+          <div className="h-4 bg-gray-200 rounded w-80 animate-pulse" />
+        </div>
+        <div className="flex flex-col gap-6 max-w-2xl">
+          <div className="bg-white rounded-2xl shadow-sm p-6 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-48 mb-5" />
+            <div className="space-y-4">
+              <div className="h-12 bg-gray-100 rounded" />
+              <div className="h-12 bg-gray-100 rounded" />
+              <div className="h-12 bg-gray-100 rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -27,7 +92,7 @@ export default function AjustesPage() {
           Ajustes del restaurante
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Configura los datos de tu restaurante y la conexión con Stripe
+          Configura los datos de tu restaurante y la conexion con Stripe
         </p>
       </div>
 
@@ -35,7 +100,7 @@ export default function AjustesPage() {
         {/* Restaurant info */}
         <Card>
           <h3 className="text-lg font-bold text-[#0D1B1E] mb-5">
-            Información del restaurante
+            Informacion del restaurante
           </h3>
           <div className="flex flex-col gap-4">
             <Input
@@ -81,8 +146,12 @@ export default function AjustesPage() {
               </div>
             </div>
 
-            <Button onClick={handleSave} className="self-start mt-2">
-              {saved ? "✓ Guardado" : "Guardar cambios"}
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
+
+            <Button onClick={handleSave} className="self-start mt-2" loading={saving}>
+              {saved ? "Guardado" : "Guardar cambios"}
             </Button>
           </div>
         </Card>
@@ -93,11 +162,13 @@ export default function AjustesPage() {
             <h3 className="text-lg font-bold text-[#0D1B1E]">
               Stripe Connect
             </h3>
-            <Badge variant="pending">No conectado</Badge>
+            <Badge variant={data?.restaurant.stripe_account_id ? "active" : "pending"}>
+              {data?.restaurant.stripe_account_id ? "Conectado" : "No conectado"}
+            </Badge>
           </div>
           <p className="text-sm text-gray-500 mb-5">
             Conecta tu cuenta de Stripe para recibir pagos y transferir propinas
-            a tu equipo de forma automática.
+            a tu equipo de forma automatica.
           </p>
           <Button variant="secondary">
             <span className="flex items-center gap-2">
@@ -119,14 +190,14 @@ export default function AjustesPage() {
             Zona peligrosa
           </h3>
           <p className="text-sm text-gray-500 mb-5">
-            Al eliminar tu restaurante se borrarán todos los datos asociados:
-            equipo, propinas, historial y códigos QR. Esta acción es irreversible.
+            Al eliminar tu restaurante se borraran todos los datos asociados:
+            equipo, propinas, historial y codigos QR. Esta accion es irreversible.
           </p>
           <button
             className="inline-flex items-center justify-center py-3 px-6 text-[15px] font-bold text-red-600 bg-red-50 rounded-[14px] hover:bg-red-100 transition-colors cursor-pointer"
             onClick={() => {
-              if (confirm("¿Estás seguro de que quieres eliminar tu restaurante? Esta acción no se puede deshacer.")) {
-                // Mock action
+              if (confirm("Estas seguro de que quieres eliminar tu restaurante? Esta accion no se puede deshacer.")) {
+                // TODO: Delete restaurant via API
               }
             }}
           >

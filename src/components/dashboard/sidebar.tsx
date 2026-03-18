@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  restaurantName?: string;
+  restaurantEmoji?: string;
+  staffRole?: string;
 }
 
 const navItems = [
@@ -15,8 +19,15 @@ const navItems = [
   { emoji: "⚙️", label: "Ajustes", href: "/dashboard/ajustes" },
 ];
 
-function Sidebar({ isOpen, onToggle }: SidebarProps) {
+function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, staffRole }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+  }
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -79,20 +90,20 @@ function Sidebar({ isOpen, onToggle }: SidebarProps) {
         <div className="px-6 pb-8 border-t border-white/10 pt-6 mt-auto">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-[#2ECC87]/20 flex items-center justify-center text-lg">
-              🍽️
+              {restaurantEmoji || "🍽️"}
             </div>
             <div>
               <p className="text-white text-sm font-semibold leading-tight">
-                La Tasca de María
+                {restaurantName || "Mi Restaurante"}
               </p>
               <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider text-[#2ECC87] bg-[#2ECC87]/10 px-2 py-0.5 rounded-full">
-                Gerente
+                {staffRole === "owner" ? "Gerente" : "Camarero"}
               </span>
             </div>
           </div>
           <button
             className="text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors cursor-pointer"
-            onClick={() => {}}
+            onClick={handleLogout}
           >
             Cerrar sesión
           </button>

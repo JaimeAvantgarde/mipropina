@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getWhatsAppLink } from "@/lib/utils";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 function generateToken(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -40,15 +41,23 @@ export async function POST(request: Request) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://mipropina.es";
     const inviteLink = `${appUrl}/auth/registro?token=${token}`;
 
-    // TODO: Insert invite into database
-    // await supabaseAdmin.from("invite_codes").insert({
-    //   restaurant_id,
-    //   code: token,
-    //   name: name.trim(),
-    //   phone,
-    //   used: false,
-    //   expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    // });
+    // Insert invite into database
+    const { error: insertError } = await supabaseAdmin.from("invite_code").insert({
+      restaurant_id,
+      code: token,
+      name: name.trim(),
+      phone,
+      used: false,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+
+    if (insertError) {
+      console.error("[invite] Insert error:", insertError);
+      return NextResponse.json(
+        { error: "Error al guardar la invitación." },
+        { status: 500 }
+      );
+    }
 
     const rName = restaurant_name || "mipropina";
     const message = `¡Hola ${name.trim()}! Te invitan a unirte al equipo de ${rName} en mipropina. Entra aquí para registrarte:\n\n${inviteLink}`;

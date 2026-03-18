@@ -1,33 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import type { Staff, InviteCode } from "@/lib/types";
+import { useDashboard } from "@/lib/dashboard-context";
 import { TeamList } from "@/components/dashboard/team-list";
 import { InviteModal } from "@/components/dashboard/invite-modal";
 import { Badge } from "@/components/ui/badge";
 import { getRelativeTime } from "@/lib/utils";
 
-const mockStaff: Staff[] = [
-  { id: "1", restaurant_id: "demo", name: "Carlos García", email: "carlos@test.com", phone: "+34612345678", avatar_emoji: "👨‍🍳", role: "owner", iban: "ES12 1234 5678 9012 3456 7890", stripe_payout_id: "acct_1", active: true, created_at: "2024-01-01" },
-  { id: "2", restaurant_id: "demo", name: "María López", email: "maria@test.com", phone: "+34623456789", avatar_emoji: "👩‍🍳", role: "waiter", iban: "ES34 9876 5432 1098 7654 3210", stripe_payout_id: "acct_2", active: true, created_at: "2024-02-15" },
-  { id: "3", restaurant_id: "demo", name: "Pedro Ruiz", email: "pedro@test.com", phone: "+34634567890", avatar_emoji: "🧑‍🍳", role: "waiter", iban: null, stripe_payout_id: null, active: true, created_at: "2024-03-01" },
-];
-
-const mockPendingInvites: InviteCode[] = [
-  {
-    id: "inv1",
-    restaurant_id: "demo",
-    code: "MP-A3K7YN",
-    phone: "+34645678901",
-    name: "Laura Martín",
-    used: false,
-    expires_at: new Date(Date.now() + 1000 * 60 * 60 * 48).toISOString(),
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-  },
-];
-
 export default function EquipoPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
+  const { data, loading } = useDashboard();
+
+  if (loading) {
+    return (
+      <div>
+        <div className="mb-8">
+          <div className="h-9 bg-gray-200 rounded w-32 animate-pulse mb-2" />
+          <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+        </div>
+        <div className="bg-white rounded-2xl shadow-sm p-6 animate-pulse mb-8">
+          <div className="h-6 bg-gray-200 rounded w-24 mb-4" />
+          <div className="space-y-4">
+            <div className="h-16 bg-gray-100 rounded" />
+            <div className="h-16 bg-gray-100 rounded" />
+            <div className="h-16 bg-gray-100 rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const { restaurant, staff, pendingInvites } = data;
 
   return (
     <div>
@@ -37,13 +42,13 @@ export default function EquipoPage() {
           Equipo
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Gestiona los miembros de tu equipo y envía invitaciones
+          Gestiona los miembros de tu equipo y envia invitaciones
         </p>
       </div>
 
       {/* Team list */}
       <div className="mb-8">
-        <TeamList staff={mockStaff} onInvite={() => setInviteOpen(true)} />
+        <TeamList staff={staff} onInvite={() => setInviteOpen(true)} />
       </div>
 
       {/* Pending invites */}
@@ -53,9 +58,9 @@ export default function EquipoPage() {
             Invitaciones pendientes
           </h3>
         </div>
-        {mockPendingInvites.length > 0 ? (
+        {pendingInvites.length > 0 ? (
           <div className="divide-y divide-gray-100">
-            {mockPendingInvites.map((inv) => (
+            {pendingInvites.map((inv) => (
               <div
                 key={inv.id}
                 className="px-6 py-4 flex items-center justify-between"
@@ -69,7 +74,7 @@ export default function EquipoPage() {
                       {inv.name}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {inv.phone} &middot; Código: {inv.code}
+                      {inv.phone} &middot; Codigo: {inv.code}
                     </p>
                   </div>
                 </div>
@@ -93,7 +98,8 @@ export default function EquipoPage() {
       <InviteModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        restaurantId="demo"
+        restaurantId={restaurant.id}
+        restaurantName={restaurant.name}
       />
     </div>
   );

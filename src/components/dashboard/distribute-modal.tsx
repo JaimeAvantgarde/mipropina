@@ -11,11 +11,12 @@ interface DistributeModalProps {
   onClose: () => void;
   totalCents: number;
   staff: Staff[];
+  restaurantId?: string;
 }
 
 type Method = "equal" | "custom";
 
-function DistributeModal({ open, onClose, totalCents, staff }: DistributeModalProps) {
+function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: DistributeModalProps) {
   const activeStaff = staff.filter((s) => s.active);
   const equalAmount = activeStaff.length > 0 ? Math.floor(totalCents / activeStaff.length) : 0;
   const equalRemainder = activeStaff.length > 0 ? totalCents - equalAmount * activeStaff.length : 0;
@@ -25,6 +26,8 @@ function DistributeModal({ open, onClose, totalCents, staff }: DistributeModalPr
     () => Object.fromEntries(activeStaff.map((s) => [s.id, equalAmount]))
   );
   const [confirmed, setConfirmed] = useState(false);
+  const [distributing, setDistributing] = useState(false);
+  const [error, setError] = useState("");
 
   const getAmounts = (): Record<string, number> => {
     if (method === "equal") {
@@ -44,12 +47,42 @@ function DistributeModal({ open, onClose, totalCents, staff }: DistributeModalPr
     setCustomAmounts((prev) => ({ ...prev, [staffId]: cents }));
   };
 
-  const handleConfirm = () => {
-    setConfirmed(true);
-    setTimeout(() => {
-      setConfirmed(false);
-      onClose();
-    }, 1500);
+  const handleConfirm = async () => {
+    setDistributing(true);
+    setError("");
+
+    try {
+      const payouts = activeStaff.map((s) => ({
+        staff_id: s.id,
+        amount_cents: amounts[s.id] || 0,
+      }));
+
+      const res = await fetch("/api/distribution/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurant_id: restaurantId || "demo",
+          method,
+          payouts,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || "Error al crear el reparto");
+      }
+
+      setConfirmed(true);
+      setTimeout(() => {
+        setConfirmed(false);
+        onClose();
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al procesar el reparto");
+    } finally {
+      setDistributing(false);
+    }
   };
 
   return (
@@ -61,7 +94,7 @@ function DistributeModal({ open, onClose, totalCents, staff }: DistributeModalPr
             Reparto confirmado
           </p>
           <p className="text-sm text-gray-400 mt-1">
-            Las transferencias se procesarán en breve
+            Las transferencias se procesaran en breve
           </p>
         </div>
       ) : (
@@ -155,10 +188,18 @@ function DistributeModal({ open, onClose, totalCents, staff }: DistributeModalPr
             </p>
           )}
 
+          {/* Error message */}
+          {error && (
+            <p className="text-xs text-red-500 text-center font-medium">
+              {error}
+            </p>
+          )}
+
           {/* Confirm */}
           <Button
             onClick={handleConfirm}
-            disabled={!isValid}
+            disabled={!isValid || distributing}
+            loading={distributing}
             className="w-full"
             size="lg"
           >

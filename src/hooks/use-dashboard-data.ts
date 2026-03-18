@@ -1,0 +1,102 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import type { Restaurant, Staff, Tip, InviteCode } from "@/lib/types";
+
+// Mock data for fallback when Supabase is not available
+const mockRestaurant: Restaurant = {
+  id: "demo",
+  name: "La Tasca de Maria",
+  slug: "la-tasca-de-maria",
+  logo_emoji: "🍽️",
+  logo_url: null,
+  theme_color: "#2ECC87",
+  owner_id: "1",
+  stripe_account_id: null,
+  created_at: "2024-01-01",
+};
+
+const mockTips: Tip[] = [
+  { id: "1", restaurant_id: "demo", amount_cents: 500, stripe_payment_id: "pi_1", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+  { id: "2", restaurant_id: "demo", amount_cents: 300, stripe_payment_id: "pi_2", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
+  { id: "3", restaurant_id: "demo", amount_cents: 1000, stripe_payment_id: "pi_3", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+  { id: "4", restaurant_id: "demo", amount_cents: 200, stripe_payment_id: "pi_4", status: "pending", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
+  { id: "5", restaurant_id: "demo", amount_cents: 2000, stripe_payment_id: "pi_5", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+];
+
+const mockStaff: Staff[] = [
+  { id: "1", restaurant_id: "demo", auth_user_id: null, name: "Carlos Garcia", email: "carlos@test.com", phone: "+34612345678", avatar_emoji: "👨‍🍳", role: "owner", iban: "ES12 1234 5678 9012 3456 7890", stripe_payout_id: "acct_1", active: true, created_at: "2024-01-01" },
+  { id: "2", restaurant_id: "demo", auth_user_id: null, name: "Maria Lopez", email: "maria@test.com", phone: "+34623456789", avatar_emoji: "👩‍🍳", role: "waiter", iban: "ES34 9876 5432 1098 7654 3210", stripe_payout_id: "acct_2", active: true, created_at: "2024-02-15" },
+  { id: "3", restaurant_id: "demo", auth_user_id: null, name: "Pedro Ruiz", email: "pedro@test.com", phone: "+34634567890", avatar_emoji: "🧑‍🍳", role: "waiter", iban: null, stripe_payout_id: null, active: true, created_at: "2024-03-01" },
+];
+
+const mockPendingInvites: InviteCode[] = [];
+
+export type DashboardData = {
+  restaurant: Restaurant;
+  staff: Staff[];
+  tips: Tip[];
+  pendingInvites: InviteCode[];
+  stats: {
+    totalCents: number;
+    tipsThisWeek: number;
+    activeStaff: number;
+    avgCents: number;
+  };
+};
+
+export function useDashboardData() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUsingMock, setIsUsingMock] = useState(false);
+
+  const computeMockStats = useCallback(() => {
+    const completedTips = mockTips.filter((t) => t.status === "completed");
+    const totalCents = completedTips.reduce((sum, t) => sum + t.amount_cents, 0);
+    const avgCents = completedTips.length > 0 ? Math.round(totalCents / completedTips.length) : 0;
+    const activeStaff = mockStaff.filter((s) => s.active);
+    return {
+      totalCents,
+      tipsThisWeek: mockTips.length,
+      activeStaff: activeStaff.length,
+      avgCents,
+    };
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/dashboard/data");
+
+      if (!res.ok) {
+        throw new Error("Error al cargar datos");
+      }
+
+      const json = await res.json();
+      setData(json);
+      setIsUsingMock(false);
+    } catch {
+      // Fallback to mock data
+      console.warn("[useDashboardData] Usando datos de prueba (Supabase no disponible)");
+      setData({
+        restaurant: mockRestaurant,
+        staff: mockStaff,
+        tips: mockTips,
+        pendingInvites: mockPendingInvites,
+        stats: computeMockStats(),
+      });
+      setIsUsingMock(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [computeMockStats]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, isUsingMock, refetch: fetchData };
+}

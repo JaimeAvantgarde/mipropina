@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import type Stripe from "stripe";
 
 export async function POST(request: Request) {
@@ -38,8 +39,10 @@ export async function POST(request: Request) {
         console.log(
           `[webhook] Payment succeeded: ${paymentIntent.id} | Restaurant: ${restaurantId} | Amount: ${paymentIntent.amount}`
         );
-        // TODO: Update tip status to "completed" in database
-        // await supabaseAdmin.from("tips").update({ status: "completed" }).eq("stripe_payment_id", paymentIntent.id);
+        await supabaseAdmin
+          .from("tip")
+          .update({ status: "completed" })
+          .eq("stripe_payment_id", paymentIntent.id);
         break;
       }
 
@@ -48,8 +51,10 @@ export async function POST(request: Request) {
         console.error(
           `[webhook] Payment failed: ${paymentIntent.id} | Reason: ${paymentIntent.last_payment_error?.message}`
         );
-        // TODO: Update tip status to "failed" in database
-        // await supabaseAdmin.from("tips").update({ status: "failed" }).eq("stripe_payment_id", paymentIntent.id);
+        await supabaseAdmin
+          .from("tip")
+          .update({ status: "failed" })
+          .eq("stripe_payment_id", paymentIntent.id);
         break;
       }
 

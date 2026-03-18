@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
@@ -37,6 +38,14 @@ export async function POST(request: Request) {
       automatic_payment_methods: {
         enabled: true,
       },
+    });
+
+    // Record pending tip in Supabase
+    await supabaseAdmin.from("tip").insert({
+      restaurant_id,
+      amount_cents,
+      stripe_payment_id: paymentIntent.id,
+      status: "pending",
     });
 
     return NextResponse.json({

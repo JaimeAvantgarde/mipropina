@@ -30,28 +30,27 @@ function RegistroContent() {
       return;
     }
 
-    // TODO: In production, validate token against DB
-    // const { data } = await supabase.from("invite_codes")
-    //   .select("*, restaurant:restaurants(name)")
-    //   .eq("code", token)
-    //   .eq("used", false)
-    //   .gt("expires_at", new Date().toISOString())
-    //   .single();
+    // Validate token against Supabase
+    async function validateToken() {
+      try {
+        const res = await fetch(`/api/invite/validate?token=${encodeURIComponent(token!)}`);
+        const data = await res.json();
 
-    // Mock: simulate token validation
-    const timer = setTimeout(() => {
-      // Any 32-char token is "valid" in dev
-      if (token.length >= 10) {
-        setRestaurantName("La Tasca de María");
-        setInviteName("Juan");
-        setName("Juan");
+        if (!res.ok || !data.valid) {
+          setStep("invalid");
+          return;
+        }
+
+        setRestaurantName(data.restaurant_name);
+        setInviteName(data.invite_name || "");
+        if (data.invite_name) setName(data.invite_name);
         setStep("form");
-      } else {
+      } catch {
         setStep("invalid");
       }
-    }, 500);
+    }
 
-    return () => clearTimeout(timer);
+    validateToken();
   }, [token]);
 
   async function handleRegister(e: React.FormEvent) {
@@ -62,11 +61,29 @@ function RegistroContent() {
     setError("");
 
     try {
-      // TODO: In production:
-      // 1. Create Supabase auth user
-      // 2. Create staff record linked to restaurant
-      // 3. Mark invite as used
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await fetch("/api/staff/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          name: name.trim(),
+          email: email.trim(),
+          phone: phone.trim() || null,
+          iban: iban.trim() || null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Error al crear la cuenta.");
+        return;
+      }
+
+      if (data.restaurant_name) {
+        setRestaurantName(data.restaurant_name);
+      }
+
       setStep("success");
     } catch {
       setError("Error al crear la cuenta. Inténtalo de nuevo.");

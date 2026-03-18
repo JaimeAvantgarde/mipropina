@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/client";
 
 function slugify(text: string): string {
   return text
@@ -78,17 +79,54 @@ export default function RegistroRestaurantePage() {
 
     setLoading(true);
 
-    // TODO: In production:
-    // 1. Create Supabase auth user (magic link)
-    // 2. Upload logo to Supabase Storage
-    // 3. Insert restaurant record
-    // 4. Insert staff record (role: owner)
-    // 5. Create QR code record
-    void logoFile; // Will be uploaded to Supabase Storage
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    try {
+      // 1. Create restaurant and owner staff via API route
+      const res = await fetch("/api/restaurant/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: nombreRestaurante.trim(),
+          slug: slug.trim(),
+          logo_emoji: "🍽️",
+          owner_name: nombre.trim(),
+          owner_email: email.trim(),
+          owner_phone: telefono.trim() || null,
+        }),
+      });
 
-    setLoading(false);
-    setDone(true);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Error al crear el restaurante.");
+        setLoading(false);
+        return;
+      }
+
+      // 2. Upload logo if provided
+      if (logoFile && data.restaurant?.id) {
+        const supabase = createClient();
+        const ext = logoFile.name.split(".").pop();
+        const path = `restaurants/${data.restaurant.id}/logo.${ext}`;
+        await supabase.storage
+          .from("logos")
+          .upload(path, logoFile, { upsert: true });
+      }
+
+      // 3. Send magic link to the owner's email
+      const supabase = createClient();
+      await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      setDone(true);
+    } catch {
+      setError("Error inesperado. Inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (done) {
