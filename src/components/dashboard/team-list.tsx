@@ -41,6 +41,7 @@ function TeamList({ staff, onInvite }: TeamListProps) {
               <th className="px-6 py-3">Nombre</th>
               <th className="px-6 py-3">Rol</th>
               <th className="px-6 py-3">IBAN</th>
+              <th className="px-6 py-3">Stripe</th>
               <th className="px-6 py-3">Estado</th>
             </tr>
           </thead>
@@ -73,6 +74,13 @@ function TeamList({ staff, onInvite }: TeamListProps) {
                     <Badge variant="active">Verificado</Badge>
                   ) : (
                     <Badge variant="pending">Pendiente</Badge>
+                  )}
+                </td>
+                <td className="px-6 py-4">
+                  {m.stripe_payout_id ? (
+                    <Badge variant="active">Stripe</Badge>
+                  ) : (
+                    <Badge variant="pending">Sin Stripe</Badge>
                   )}
                 </td>
                 <td className="px-6 py-4">
@@ -116,6 +124,11 @@ function TeamList({ staff, onInvite }: TeamListProps) {
                       <Badge variant="active">IBAN</Badge>
                     ) : (
                       <Badge variant="pending">Sin IBAN</Badge>
+                    )}
+                    {m.stripe_payout_id ? (
+                      <Badge variant="active">Stripe</Badge>
+                    ) : (
+                      <Badge variant="pending">Sin Stripe</Badge>
                     )}
                   </div>
                 </div>

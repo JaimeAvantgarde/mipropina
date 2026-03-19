@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/utils";
@@ -18,29 +18,54 @@ type Method = "equal" | "custom";
 
 function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: DistributeModalProps) {
   const activeStaff = staff.filter((s) => s.active);
-  const equalAmount = activeStaff.length > 0 ? Math.floor(totalCents / activeStaff.length) : 0;
-  const equalRemainder = activeStaff.length > 0 ? totalCents - equalAmount * activeStaff.length : 0;
+  const connectedStaff = activeStaff.filter((s) => !!s.stripe_payout_id);
+  const unconnectedStaff = activeStaff.filter((s) => !s.stripe_payout_id);
 
   const [method, setMethod] = useState<Method>("equal");
-  const [customAmounts, setCustomAmounts] = useState<Record<string, number>>(
-    () => Object.fromEntries(activeStaff.map((s) => [s.id, equalAmount]))
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(connectedStaff.map((s) => s.id))
   );
+  const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({});
   const [confirmed, setConfirmed] = useState(false);
   const [distributing, setDistributing] = useState(false);
   const [error, setError] = useState("");
 
+  const selectedStaff = useMemo(
+    () => connectedStaff.filter((s) => selectedIds.has(s.id)),
+    [connectedStaff, selectedIds]
+  );
+
+  const selectedCount = selectedStaff.length;
+
+  const equalAmount = selectedCount > 0 ? Math.floor(totalCents / selectedCount) : 0;
+  const equalRemainder = selectedCount > 0 ? totalCents - equalAmount * selectedCount : 0;
+
   const getAmounts = (): Record<string, number> => {
     if (method === "equal") {
       return Object.fromEntries(
-        activeStaff.map((s, i) => [s.id, equalAmount + (i === 0 ? equalRemainder : 0)])
+        selectedStaff.map((s, i) => [s.id, equalAmount + (i === 0 ? equalRemainder : 0)])
       );
     }
-    return customAmounts;
+    return Object.fromEntries(
+      selectedStaff.map((s) => [s.id, customAmounts[s.id] || 0])
+    );
   };
 
   const amounts = getAmounts();
   const totalDistributed = Object.values(amounts).reduce((a, b) => a + b, 0);
-  const isValid = method === "equal" || totalDistributed === totalCents;
+  const isValid = selectedCount > 0 && (method === "equal" || totalDistributed === totalCents);
+
+  const toggleStaff = (staffId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(staffId)) {
+        next.delete(staffId);
+      } else {
+        next.add(staffId);
+      }
+      return next;
+    });
+  };
 
   const handleCustomChange = (staffId: string, euros: string) => {
     const cents = Math.round(parseFloat(euros || "0") * 100);
@@ -52,12 +77,12 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
     setError("");
 
     try {
-      const payouts = activeStaff.map((s) => ({
+      const payouts = selectedStaff.map((s) => ({
         staff_id: s.id,
         amount_cents: amounts[s.id] || 0,
       }));
 
-      const res = await fetch("/api/distribution/create", {
+      const res = await fetch("/api/stripe/create-payout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +119,7 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
             Reparto confirmado
           </p>
           <p className="text-sm text-gray-400 mt-1">
-            Las transferencias se procesaran en breve
+            Las transferencias se procesarán en breve
           </p>
         </div>
       ) : (
@@ -136,17 +161,28 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
             <table className="w-full">
               <thead>
                 <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50">
+                  <th className="px-4 py-2.5 w-8"></th>
                   <th className="px-4 py-2.5">Nombre</th>
                   <th className="px-4 py-2.5 text-right">Importe</th>
                   <th className="px-4 py-2.5 text-right">%</th>
                 </tr>
               </thead>
               <tbody>
-                {activeStaff.map((s) => {
-                  const amt = amounts[s.id] || 0;
-                  const pct = totalCents > 0 ? ((amt / totalCents) * 100).toFixed(1) : "0.0";
+                {/* Connected staff (selectable) */}
+                {connectedStaff.map((s) => {
+                  const isSelected = selectedIds.has(s.id);
+                  const amt = isSelected ? (amounts[s.id] || 0) : 0;
+                  const pct = totalCents > 0 && isSelected ? ((amt / totalCents) * 100).toFixed(1) : "0.0";
                   return (
-                    <tr key={s.id} className="border-t border-gray-50">
+                    <tr key={s.id} className={`border-t border-gray-50 ${!isSelected ? "opacity-50" : ""}`}>
+                      <td className="pl-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleStaff(s.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-[#2ECC87] focus:ring-[#2ECC87] cursor-pointer"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">{s.avatar_emoji}</span>
@@ -156,33 +192,76 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {method === "custom" ? (
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={(amt / 100).toFixed(2)}
-                            onChange={(e) => handleCustomChange(s.id, e.target.value)}
-                            className="w-24 text-right bg-white border border-gray-200 rounded-lg py-1.5 px-2 text-sm font-semibold text-[#0D1B1E] focus:border-primary focus:outline-none"
-                          />
+                        {isSelected ? (
+                          method === "custom" ? (
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={(amt / 100).toFixed(2)}
+                              onChange={(e) => handleCustomChange(s.id, e.target.value)}
+                              className="w-24 text-right bg-white border border-gray-200 rounded-lg py-1.5 px-2 text-sm font-semibold text-[#0D1B1E] focus:border-primary focus:outline-none"
+                            />
+                          ) : (
+                            <span className="text-sm font-bold text-[#0D1B1E]">
+                              {formatCents(amt)}
+                            </span>
+                          )
                         ) : (
-                          <span className="text-sm font-bold text-[#0D1B1E]">
-                            {formatCents(amt)}
-                          </span>
+                          <span className="text-sm text-gray-400">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right text-sm text-gray-400">
-                        {pct}%
+                        {isSelected ? `${pct}%` : "—"}
                       </td>
                     </tr>
                   );
                 })}
+
+                {/* Unconnected staff (greyed out, not selectable) */}
+                {unconnectedStaff.map((s) => (
+                  <tr key={s.id} className="border-t border-gray-50 opacity-40">
+                    <td className="pl-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        disabled
+                        className="w-4 h-4 rounded border-gray-300 text-gray-300 cursor-not-allowed"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{s.avatar_emoji}</span>
+                        <span className="text-sm font-medium text-gray-400">
+                          {s.name}
+                        </span>
+                        <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 uppercase">
+                          Sin Stripe
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm text-gray-400">—</td>
+                    <td className="px-4 py-3 text-right text-sm text-gray-400">—</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
 
+          {/* Stripe fee note */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
+            <p className="text-xs text-amber-700">
+              Se cobrarán 2€ por cada persona que reciba una transferencia este mes
+            </p>
+            {selectedCount > 0 && (
+              <p className="text-xs font-semibold text-amber-800 mt-1">
+                Coste Stripe: {selectedCount} × 2€ = {selectedCount * 2}€
+              </p>
+            )}
+          </div>
+
           {/* Validation */}
-          {method === "custom" && totalDistributed !== totalCents && (
+          {method === "custom" && selectedCount > 0 && totalDistributed !== totalCents && (
             <p className="text-xs text-red-500 text-center font-medium">
               Total asignado: {formatCents(totalDistributed)} — debe ser {formatCents(totalCents)}
             </p>
@@ -203,7 +282,9 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
             className="w-full"
             size="lg"
           >
-            Confirmar reparto
+            {selectedCount > 0
+              ? `Confirmar reparto a ${selectedCount} persona${selectedCount === 1 ? "" : "s"}`
+              : "Selecciona al menos una persona"}
           </Button>
         </div>
       )}

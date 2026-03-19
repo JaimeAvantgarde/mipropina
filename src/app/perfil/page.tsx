@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatCents } from "@/lib/utils";
 import Link from "next/link";
 import type { Staff, Restaurant } from "@/lib/types";
@@ -37,6 +38,51 @@ export default function PerfilPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [stripeStatus, setStripeStatus] = useState<{
+    charges_enabled: boolean;
+    payouts_enabled: boolean;
+    details_submitted: boolean;
+  } | null>(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeConnecting, setStripeConnecting] = useState(false);
+
+  const fetchStripeStatus = useCallback(async (payoutId: string) => {
+    setStripeLoading(true);
+    try {
+      const res = await fetch(
+        `/api/stripe/connect/status?account_id=${payoutId}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setStripeStatus(data);
+      }
+    } catch {
+      console.warn("[perfil] Error al obtener estado de Stripe");
+    } finally {
+      setStripeLoading(false);
+    }
+  }, []);
+
+  async function handleStripeConnect() {
+    if (!profile?.staff) return;
+    setStripeConnecting(true);
+    try {
+      const res = await fetch("/api/stripe/connect/create-waiter-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staff_id: profile.staff.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al conectar Stripe");
+      // Redirect to Stripe onboarding
+      window.location.href = data.url;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al conectar con Stripe"
+      );
+      setStripeConnecting(false);
+    }
+  }
 
   useEffect(() => {
     async function loadProfile() {
@@ -62,6 +108,11 @@ export default function PerfilPage() {
           setIban(staffRecord.iban || "");
           setEmail(staffRecord.email || "");
           setTitular(staffRecord.name || "");
+
+          // Fetch Stripe status if connected
+          if (staffRecord.stripe_payout_id) {
+            fetchStripeStatus(staffRecord.stripe_payout_id);
+          }
         }
       } catch {
         // Use mock data as fallback
@@ -71,7 +122,7 @@ export default function PerfilPage() {
       }
     }
     loadProfile();
-  }, []);
+  }, [fetchStripeStatus]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -248,6 +299,86 @@ export default function PerfilPage() {
                   Guardar datos
                 </Button>
               </form>
+            </Card>
+
+            {/* Stripe Connect section */}
+            <Card className="mt-6">
+              <h3 className="text-lg font-bold text-dark mb-4">
+                Cuenta Stripe Connect
+              </h3>
+
+              {profile?.staff?.stripe_payout_id ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="active">Cuenta Stripe conectada</Badge>
+                  </div>
+
+                  {stripeLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-48 mb-2" />
+                      <div className="h-4 bg-gray-200 rounded w-40" />
+                    </div>
+                  ) : stripeStatus ? (
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            stripeStatus.charges_enabled
+                              ? "bg-green-500"
+                              : "bg-orange-400"
+                          }`}
+                        />
+                        <span className="text-foreground/70">
+                          Cobros:{" "}
+                          {stripeStatus.charges_enabled
+                            ? "Habilitados"
+                            : "Pendiente"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            stripeStatus.payouts_enabled
+                              ? "bg-green-500"
+                              : "bg-orange-400"
+                          }`}
+                        />
+                        <span className="text-foreground/70">
+                          Pagos:{" "}
+                          {stripeStatus.payouts_enabled
+                            ? "Habilitados"
+                            : "Pendiente"}
+                        </span>
+                      </div>
+
+                      {!stripeStatus.details_submitted && (
+                        <Button
+                          size="sm"
+                          className="w-fit mt-2"
+                          onClick={handleStripeConnect}
+                          loading={stripeConnecting}
+                        >
+                          Completar configuracion
+                        </Button>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm text-foreground/60">
+                    Conecta tu cuenta bancaria para recibir propinas
+                    automaticamente a traves de Stripe.
+                  </p>
+                  <Button
+                    onClick={handleStripeConnect}
+                    loading={stripeConnecting}
+                    className="w-full"
+                  >
+                    Conectar con Stripe
+                  </Button>
+                </div>
+              )}
             </Card>
           </>
         )}

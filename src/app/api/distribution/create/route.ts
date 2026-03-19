@@ -66,31 +66,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create payout records
-    const payoutRecords = payouts.map((p) => ({
-      distribution_id: distribution.id,
-      staff_id: p.staff_id,
-      amount_cents: p.amount_cents,
-      status: "pending" as const,
-    }));
-
-    const { error: payoutError } = await supabaseAdmin
-      .from("payout")
-      .insert(payoutRecords);
-
-    if (payoutError) {
-      console.error("[distribution/create] Payout insert error:", payoutError);
-      // Rollback distribution
-      await supabaseAdmin.from("distribution").delete().eq("id", distribution.id);
-      return NextResponse.json(
-        { error: "Error al crear los pagos individuales." },
-        { status: 500 }
-      );
-    }
+    // Note: payout records are now created by /api/stripe/create-payout
+    // which also handles real Stripe transfers.
+    // This route only creates the distribution record for non-Stripe manual flows.
 
     return NextResponse.json({
       distribution,
-      payouts: payoutRecords,
       message: "Reparto creado correctamente.",
     });
   } catch (error) {

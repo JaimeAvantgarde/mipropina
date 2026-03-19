@@ -1,84 +1,114 @@
 import { NextResponse } from "next/server";
-
-type PayoutEntry = {
-  staff_id: string;
-  amount_cents: number;
-  stripe_account_id: string;
-};
+import { getStripe } from "@/lib/stripe";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { distribution_id, payouts } = body as {
-      distribution_id: string;
-      payouts: PayoutEntry[];
-    };
+    const { restaurant_id, method, payouts } = body;
+    // payouts: [{ staff_id, amount_cents }]
 
-    if (!distribution_id || typeof distribution_id !== "string") {
-      return NextResponse.json(
-        { error: "distribution_id es obligatorio." },
-        { status: 400 }
-      );
+    if (!restaurant_id || !payouts?.length) {
+      return NextResponse.json({ error: "Datos incompletos." }, { status: 400 });
     }
 
-    if (!Array.isArray(payouts) || payouts.length === 0) {
-      return NextResponse.json(
-        { error: "Se necesita al menos un pago." },
-        { status: 400 }
-      );
+    // Fetch staff records to get stripe_payout_id
+    const staffIds = payouts.map((p: any) => p.staff_id);
+    const { data: staffRecords } = await supabaseAdmin
+      .from("staff")
+      .select("id, stripe_payout_id, name")
+      .in("id", staffIds);
+
+    if (!staffRecords) {
+      return NextResponse.json({ error: "No se encontraron los camareros." }, { status: 404 });
     }
 
-    // Validate each payout entry
+    // Create distribution record
+    const totalCents = payouts.reduce((sum: number, p: any) => sum + p.amount_cents, 0);
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay() + 1);
+
+    const { data: distribution, error: distError } = await supabaseAdmin
+      .from("distribution")
+      .insert({
+        restaurant_id,
+        week_start: weekStart.toISOString().split("T")[0],
+        week_end: now.toISOString().split("T")[0],
+        total_cents: totalCents,
+        method: method || "custom",
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (distError || !distribution) {
+      return NextResponse.json({ error: "Error al crear la distribución." }, { status: 500 });
+    }
+
+    const results = [];
+
     for (const payout of payouts) {
-      if (!payout.staff_id || !payout.amount_cents || !payout.stripe_account_id) {
-        return NextResponse.json(
-          { error: "Cada pago necesita staff_id, amount_cents y stripe_account_id." },
-          { status: 400 }
-        );
+      const staff = staffRecords.find((s: any) => s.id === payout.staff_id);
+      if (!staff?.stripe_payout_id) {
+        results.push({ staff_id: payout.staff_id, status: "skipped", reason: "No Stripe account" });
+        continue;
       }
-      if (payout.amount_cents < 50) {
-        return NextResponse.json(
-          { error: "El importe mínimo por pago es 0,50 €." },
-          { status: 400 }
-        );
+
+      try {
+        // Create Stripe Transfer
+        const transfer = await getStripe().transfers.create({
+          amount: payout.amount_cents,
+          currency: "eur",
+          destination: staff.stripe_payout_id,
+          metadata: {
+            distribution_id: distribution.id,
+            staff_id: payout.staff_id,
+            restaurant_id,
+          },
+        });
+
+        // Create payout record
+        await supabaseAdmin.from("payout").insert({
+          distribution_id: distribution.id,
+          staff_id: payout.staff_id,
+          amount_cents: payout.amount_cents,
+          stripe_transfer_id: transfer.id,
+          status: "sent",
+          paid_at: new Date().toISOString(),
+        });
+
+        results.push({ staff_id: payout.staff_id, status: "sent", transfer_id: transfer.id });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Error";
+
+        // Record failed payout
+        await supabaseAdmin.from("payout").insert({
+          distribution_id: distribution.id,
+          staff_id: payout.staff_id,
+          amount_cents: payout.amount_cents,
+          status: "failed",
+        });
+
+        results.push({ staff_id: payout.staff_id, status: "failed", error: message });
       }
     }
 
-    // TODO: Create Stripe transfers for each payout
-    // for (const payout of payouts) {
-    //   const transfer = await stripe.transfers.create({
-    //     amount: payout.amount_cents,
-    //     currency: "eur",
-    //     destination: payout.stripe_account_id,
-    //     metadata: {
-    //       distribution_id,
-    //       staff_id: payout.staff_id,
-    //     },
-    //   });
-    //   // Update payout record with transfer ID
-    //   await supabaseAdmin.from("payouts").update({
-    //     stripe_transfer_id: transfer.id,
-    //     status: "sent",
-    //     paid_at: new Date().toISOString(),
-    //   }).eq("id", payout.staff_id);
-    // }
-
-    const results = payouts.map((p) => ({
-      staff_id: p.staff_id,
-      amount_cents: p.amount_cents,
-      status: "pending" as const,
-    }));
+    // Update distribution status
+    const allSent = results.every((r) => r.status === "sent");
+    await supabaseAdmin
+      .from("distribution")
+      .update({ status: allSent ? "distributed" : "pending" })
+      .eq("id", distribution.id);
 
     return NextResponse.json({
-      distribution_id,
-      payouts: results,
-      message: "Pagos encolados correctamente.",
+      distribution_id: distribution.id,
+      results,
+      message: `${results.filter((r) => r.status === "sent").length} transferencias completadas.`,
     });
   } catch (error) {
-    console.error("[create-payout] Error:", error);
-    return NextResponse.json(
-      { error: "Error al procesar los pagos." },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Error desconocido";
+    console.error("[create-payout] Error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
