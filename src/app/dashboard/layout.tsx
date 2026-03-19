@@ -70,9 +70,7 @@ export default function DashboardLayout({
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           restaurantName={data?.restaurant.name}
           restaurantEmoji={data?.restaurant.logo_emoji}
-          staffRole={
-            data?.staff.find((s) => s.role === "owner") ? "owner" : "waiter"
-          }
+          staffRole={data?.currentUserRole || "waiter"}
         />
 
         {/* Mobile top bar */}

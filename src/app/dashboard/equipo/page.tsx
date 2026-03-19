@@ -9,7 +9,7 @@ import { getRelativeTime } from "@/lib/utils";
 
 export default function EquipoPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
-  const { data, loading } = useDashboard();
+  const { data, loading, refetch } = useDashboard();
 
   if (loading) {
     return (
@@ -32,7 +32,8 @@ export default function EquipoPage() {
 
   if (!data) return null;
 
-  const { restaurant, staff, pendingInvites } = data;
+  const { restaurant, staff, pendingInvites, currentUserRole } = data;
+  const isOwner = currentUserRole === "owner";
 
   return (
     <div>
@@ -42,13 +43,13 @@ export default function EquipoPage() {
           Equipo
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Gestiona los miembros de tu equipo y envia invitaciones
+          {isOwner ? "Gestiona los miembros de tu equipo y envia invitaciones" : "Miembros del equipo"}
         </p>
       </div>
 
       {/* Team list */}
       <div className="mb-8">
-        <TeamList staff={staff} onInvite={() => setInviteOpen(true)} />
+        <TeamList staff={staff} onInvite={() => setInviteOpen(true)} onRefresh={refetch} readOnly={!isOwner} />
       </div>
 
       {/* Pending invites */}

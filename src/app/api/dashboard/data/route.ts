@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   try {
     // Try to get the authenticated user first
     let restaurantId: string | null = null;
+    let currentUserRole: string = "waiter";
 
     try {
       const supabase = await createClient();
@@ -15,12 +16,13 @@ export async function GET(request: Request) {
         // Get staff record for this user to find their restaurant
         const { data: staffRecord } = await supabaseAdmin
           .from("staff")
-          .select("restaurant_id")
+          .select("restaurant_id, role")
           .eq("auth_user_id", user.id)
           .single();
 
         if (staffRecord) {
           restaurantId = staffRecord.restaurant_id;
+          currentUserRole = staffRecord.role || "waiter";
         }
       }
     } catch {
@@ -112,6 +114,7 @@ export async function GET(request: Request) {
       staff: staff || [],
       tips: allTips,
       pendingInvites: pendingInvites || [],
+      currentUserRole,
       stats: {
         totalCents,
         tipsThisWeek: tipsThisWeek.length,

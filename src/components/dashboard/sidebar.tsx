@@ -13,15 +13,17 @@ interface SidebarProps {
   staffRole?: string;
 }
 
-const navItems = [
-  { emoji: "📊", label: "Vista general", href: "/dashboard" },
-  { emoji: "👥", label: "Equipo", href: "/dashboard/equipo" },
-  { emoji: "⚙️", label: "Ajustes", href: "/dashboard/ajustes" },
+const allNavItems = [
+  { emoji: "📊", label: "Vista general", href: "/dashboard", ownerOnly: false },
+  { emoji: "👥", label: "Equipo", href: "/dashboard/equipo", ownerOnly: false },
+  { emoji: "⚙️", label: "Ajustes", href: "/dashboard/ajustes", ownerOnly: true },
 ];
 
 function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, staffRole }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isOwner = staffRole === "owner";
+  const navItems = allNavItems.filter((item) => !item.ownerOnly || isOwner);
 
   async function handleLogout() {
     const supabase = createClient();

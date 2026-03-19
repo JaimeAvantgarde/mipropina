@@ -50,7 +50,8 @@ export default function DashboardPage() {
 
   if (!data) return null;
 
-  const { restaurant, tips, staff, stats } = data;
+  const { restaurant, tips, staff, stats, currentUserRole } = data;
+  const isOwner = currentUserRole === "owner";
   const activeStaff = staff.filter((s) => s.active);
 
   return (
@@ -60,9 +61,11 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-[family-name:var(--font-serif)] text-[#0D1B1E]">
           Vista general
         </h1>
-        <Button onClick={() => setDistributeOpen(true)} size="lg">
-          Repartir propinas
-        </Button>
+        {isOwner && (
+          <Button onClick={() => setDistributeOpen(true)} size="lg">
+            Repartir propinas
+          </Button>
+        )}
       </div>
 
       {/* Stat cards */}

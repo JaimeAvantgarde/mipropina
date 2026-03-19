@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/utils";
@@ -25,7 +25,7 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
     () => new Set(connectedStaff.map((s) => s.id))
   );
-  const [customAmounts, setCustomAmounts] = useState<Record<string, number>>({});
+  const [percentages, setPercentages] = useState<Record<string, number>>({});
   const [confirmed, setConfirmed] = useState(false);
   const [distributing, setDistributing] = useState(false);
   const [error, setError] = useState("");
@@ -37,8 +37,37 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
 
   const selectedCount = selectedStaff.length;
 
+  const selectedKey = useMemo(
+    () => selectedStaff.map((s) => s.id).join(","),
+    [selectedStaff]
+  );
+
+  // Initialize equal percentages when selection changes or method switches to custom
+  useEffect(() => {
+    if (method === "custom" && selectedCount > 0) {
+      const equalPct = parseFloat((100 / selectedCount).toFixed(2));
+      const newPcts: Record<string, number> = {};
+      selectedStaff.forEach((s, i) => {
+        if (i === selectedCount - 1) {
+          // Last person gets the remainder to ensure sum = 100
+          const sumSoFar = equalPct * (selectedCount - 1);
+          newPcts[s.id] = parseFloat((100 - sumSoFar).toFixed(2));
+        } else {
+          newPcts[s.id] = equalPct;
+        }
+      });
+      setPercentages(newPcts);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [method, selectedCount, selectedKey]);
+
   const equalAmount = selectedCount > 0 ? Math.floor(totalCents / selectedCount) : 0;
   const equalRemainder = selectedCount > 0 ? totalCents - equalAmount * selectedCount : 0;
+
+  const totalPercentage = useMemo(() => {
+    if (method !== "custom") return 100;
+    return selectedStaff.reduce((sum, s) => sum + (percentages[s.id] || 0), 0);
+  }, [method, selectedStaff, percentages]);
 
   const getAmounts = (): Record<string, number> => {
     if (method === "equal") {
@@ -46,14 +75,27 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
         selectedStaff.map((s, i) => [s.id, equalAmount + (i === 0 ? equalRemainder : 0)])
       );
     }
-    return Object.fromEntries(
-      selectedStaff.map((s) => [s.id, customAmounts[s.id] || 0])
-    );
+    // Convert percentages to cents
+    const amounts: Record<string, number> = {};
+    let distributed = 0;
+    selectedStaff.forEach((s, i) => {
+      const pct = percentages[s.id] || 0;
+      if (i === selectedCount - 1) {
+        // Last person gets remainder to avoid rounding issues
+        amounts[s.id] = totalCents - distributed;
+      } else {
+        const amt = Math.round((pct / 100) * totalCents);
+        amounts[s.id] = amt;
+        distributed += amt;
+      }
+    });
+    return amounts;
   };
 
   const amounts = getAmounts();
   const totalDistributed = Object.values(amounts).reduce((a, b) => a + b, 0);
-  const isValid = selectedCount > 0 && (method === "equal" || totalDistributed === totalCents);
+  const percentagesValid = Math.abs(totalPercentage - 100) < 0.01;
+  const isValid = selectedCount > 0 && (method === "equal" || percentagesValid);
 
   const toggleStaff = (staffId: string) => {
     setSelectedIds((prev) => {
@@ -67,9 +109,9 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
     });
   };
 
-  const handleCustomChange = (staffId: string, euros: string) => {
-    const cents = Math.round(parseFloat(euros || "0") * 100);
-    setCustomAmounts((prev) => ({ ...prev, [staffId]: cents }));
+  const handlePercentageChange = (staffId: string, value: string) => {
+    const pct = parseFloat(value || "0");
+    setPercentages((prev) => ({ ...prev, [staffId]: pct }));
   };
 
   const handleConfirm = async () => {
@@ -152,7 +194,7 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              Personalizado
+              Por porcentaje
             </button>
           </div>
 
@@ -163,8 +205,17 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
                 <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50">
                   <th className="px-4 py-2.5 w-8"></th>
                   <th className="px-4 py-2.5">Nombre</th>
-                  <th className="px-4 py-2.5 text-right">Importe</th>
-                  <th className="px-4 py-2.5 text-right">%</th>
+                  {method === "custom" ? (
+                    <>
+                      <th className="px-4 py-2.5 text-right">%</th>
+                      <th className="px-4 py-2.5 text-right">Importe</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-4 py-2.5 text-right">Importe</th>
+                      <th className="px-4 py-2.5 text-right">%</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -172,7 +223,9 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
                 {connectedStaff.map((s) => {
                   const isSelected = selectedIds.has(s.id);
                   const amt = isSelected ? (amounts[s.id] || 0) : 0;
-                  const pct = totalCents > 0 && isSelected ? ((amt / totalCents) * 100).toFixed(1) : "0.0";
+                  const pct = method === "custom"
+                    ? (isSelected ? (percentages[s.id] || 0) : 0)
+                    : (totalCents > 0 && isSelected ? ((amt / totalCents) * 100).toFixed(1) : "0.0");
                   return (
                     <tr key={s.id} className={`border-t border-gray-50 ${!isSelected ? "opacity-50" : ""}`}>
                       <td className="pl-4 py-3">
@@ -191,29 +244,52 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        {isSelected ? (
-                          method === "custom" ? (
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={(amt / 100).toFixed(2)}
-                              onChange={(e) => handleCustomChange(s.id, e.target.value)}
-                              className="w-24 text-right bg-white border border-gray-200 rounded-lg py-1.5 px-2 text-sm font-semibold text-[#0D1B1E] focus:border-primary focus:outline-none"
-                            />
-                          ) : (
-                            <span className="text-sm font-bold text-[#0D1B1E]">
-                              {formatCents(amt)}
-                            </span>
-                          )
-                        ) : (
-                          <span className="text-sm text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-400">
-                        {isSelected ? `${pct}%` : "—"}
-                      </td>
+                      {method === "custom" ? (
+                        <>
+                          <td className="px-4 py-3 text-right">
+                            {isSelected ? (
+                              <div className="flex items-center justify-end gap-1">
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  max="100"
+                                  value={percentages[s.id] ?? 0}
+                                  onChange={(e) => handlePercentageChange(s.id, e.target.value)}
+                                  className="w-20 text-right bg-white border border-gray-200 rounded-lg py-1.5 px-2 text-sm font-semibold text-[#0D1B1E] focus:border-[#2ECC87] focus:outline-none"
+                                />
+                                <span className="text-sm text-gray-400">%</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {isSelected ? (
+                              <span className="text-sm font-bold text-[#0D1B1E]">
+                                {formatCents(amt)}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-400">—</span>
+                            )}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3 text-right">
+                            {isSelected ? (
+                              <span className="text-sm font-bold text-[#0D1B1E]">
+                                {formatCents(amt)}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm text-gray-400">
+                            {isSelected ? `${pct}%` : "—"}
+                          </td>
+                        </>
+                      )}
                     </tr>
                   );
                 })}
@@ -248,6 +324,15 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
             </table>
           </div>
 
+          {/* Percentage total indicator (custom mode) */}
+          {method === "custom" && selectedCount > 0 && (
+            <div className={`text-center text-xs font-medium ${
+              percentagesValid ? "text-[#2ECC87]" : "text-red-500"
+            }`}>
+              Total: {totalPercentage.toFixed(1)}% {percentagesValid ? "✓" : `— debe ser 100%`}
+            </div>
+          )}
+
           {/* Stripe fee note */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
             <p className="text-xs text-amber-700">
@@ -261,9 +346,9 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
           </div>
 
           {/* Validation */}
-          {method === "custom" && selectedCount > 0 && totalDistributed !== totalCents && (
+          {method === "custom" && selectedCount > 0 && !percentagesValid && (
             <p className="text-xs text-red-500 text-center font-medium">
-              Total asignado: {formatCents(totalDistributed)} — debe ser {formatCents(totalCents)}
+              Los porcentajes deben sumar 100%. Actualmente: {totalPercentage.toFixed(1)}%
             </p>
           )}
 

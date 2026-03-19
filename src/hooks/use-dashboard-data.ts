@@ -37,6 +37,7 @@ export type DashboardData = {
   staff: Staff[];
   tips: Tip[];
   pendingInvites: InviteCode[];
+  currentUserRole: "owner" | "waiter";
   stats: {
     totalCents: number;
     tipsThisWeek: number;
@@ -96,6 +97,7 @@ export function useDashboardData() {
           staff: mockStaff,
           tips: mockTips,
           pendingInvites: mockPendingInvites,
+          currentUserRole: "owner",
           stats: computeMockStats(),
         });
         setIsUsingMock(true);
