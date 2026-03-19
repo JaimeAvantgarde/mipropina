@@ -34,7 +34,7 @@ export default function RegistroPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signUp({
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -51,11 +51,17 @@ export default function RegistroPage() {
         return;
       }
 
-      // Auto-login after signup
-      await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      // If signUp didn't return a session (email confirmation required), try login
+      if (!signUpData.session) {
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (loginError) {
+          setError("Cuenta creada pero no se pudo iniciar sesión: " + loginError.message);
+          return;
+        }
+      }
 
       router.push("/dashboard");
     } catch {
