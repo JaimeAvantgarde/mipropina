@@ -45,6 +45,8 @@ export async function GET(request: Request) {
 
       if (firstRestaurant) {
         restaurantId = firstRestaurant.id;
+        // In fallback mode, assume owner role (dev/single-restaurant)
+        currentUserRole = "owner";
       }
     }
 
