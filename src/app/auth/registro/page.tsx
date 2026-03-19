@@ -21,6 +21,7 @@ function RegistroContent() {
   // Form fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [iban, setIban] = useState("");
 
@@ -55,7 +56,11 @@ function RegistroContent() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
+    if (!name.trim() || !email.trim() || !password) return;
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -68,6 +73,7 @@ function RegistroContent() {
           token,
           name: name.trim(),
           email: email.trim(),
+          password,
           phone: phone.trim() || null,
           iban: iban.trim() || null,
         }),
@@ -186,6 +192,16 @@ function RegistroContent() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+        />
+
+        <Input
+          label="Contraseña"
+          type="password"
+          placeholder="Mínimo 6 caracteres"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="new-password"
         />
 
         <Input

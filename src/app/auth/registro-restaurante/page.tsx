@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function RegistroPage() {
-  const [done, setDone] = useState(false);
+  const router = useRouter();
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -17,8 +19,13 @@ export default function RegistroPage() {
     e.preventDefault();
     setError("");
 
-    if (!nombre.trim() || !email.trim()) {
-      setError("Nombre y email son obligatorios.");
+    if (!nombre.trim() || !email.trim() || !password) {
+      setError("Todos los campos son obligatorios.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
@@ -26,56 +33,35 @@ export default function RegistroPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithOtp({
+      const { error: authError } = await supabase.auth.signUp({
         email: email.trim(),
+        password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
           data: { full_name: nombre.trim() },
         },
       });
 
       if (authError) {
-        setError(authError.message);
-        setLoading(false);
+        if (authError.message.includes("already registered")) {
+          setError("Este email ya está registrado. ¿Quieres acceder?");
+        } else {
+          setError(authError.message);
+        }
         return;
       }
 
-      setDone(true);
+      // Auto-login after signup
+      await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      router.push("/dashboard");
     } catch {
       setError("Error inesperado. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
-  }
-
-  if (done) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5FAF7] px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <span className="font-[family-name:var(--font-serif)] text-3xl text-[#0D1B1E]">
-              mi<span className="text-[#2ECC87]">propina</span>
-            </span>
-          </div>
-          <Card>
-            <div className="py-4 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#E8F5E9]">
-                <svg className="h-8 w-8 text-[#2ECC87]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
-              </div>
-              <h1 className="mb-2 font-[family-name:var(--font-serif)] text-2xl text-[#0D1B1E]">
-                ¡Revisa tu email!
-              </h1>
-              <p className="text-sm text-gray-500">
-                Hemos enviado un enlace de acceso a <strong>{email}</strong>.
-                Haz clic en el enlace para entrar a tu panel de control.
-              </p>
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -112,6 +98,16 @@ export default function RegistroPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
+            />
+            <Input
+              label="Contraseña"
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
             />
 
             {error && (

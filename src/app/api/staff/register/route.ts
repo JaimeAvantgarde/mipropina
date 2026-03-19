@@ -4,11 +4,18 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { token, name, email, phone, iban } = body;
+    const { token, name, email, password, phone, iban } = body;
 
-    if (!token || !name?.trim() || !email?.trim()) {
+    if (!token || !name?.trim() || !email?.trim() || !password) {
       return NextResponse.json(
-        { error: "Token, nombre y email son obligatorios." },
+        { error: "Token, nombre, email y contraseña son obligatorios." },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "La contraseña debe tener al menos 6 caracteres." },
         { status: 400 }
       );
     }
@@ -29,9 +36,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create auth user via admin API
+    // Create auth user via admin API with password
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email.trim(),
+      password,
       email_confirm: true,
     });
 
