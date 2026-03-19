@@ -90,6 +90,13 @@ export default function LoginPage() {
             <Button type="submit" loading={loading} className="w-full mt-2">
               Entrar
             </Button>
+
+            <a
+              href="/auth/recuperar"
+              className="block text-center text-sm text-gray-400 hover:text-[#2ECC87] mt-3"
+            >
+              ¿Olvidaste tu contraseña?
+            </a>
           </form>
         </div>
 
