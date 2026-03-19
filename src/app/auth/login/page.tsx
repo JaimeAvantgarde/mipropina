@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { GoogleButton } from "@/components/auth/google-button";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -61,6 +62,16 @@ export default function LoginPage() {
             Accede a tu cuenta
           </h2>
 
+          {/* Google login */}
+          <GoogleButton label="Entrar con Google" />
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 font-medium">o con email</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Input
               label="Email"
@@ -70,7 +81,6 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              autoFocus
             />
 
             <Input
@@ -93,7 +103,7 @@ export default function LoginPage() {
 
             <a
               href="/auth/recuperar"
-              className="block text-center text-sm text-gray-400 hover:text-[#2ECC87] mt-3"
+              className="block text-center text-sm text-gray-400 hover:text-[#2ECC87] mt-1"
             >
               ¿Olvidaste tu contraseña?
             </a>
