@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/client";
 
 function slugify(text: string): string {
   return text
@@ -102,27 +101,13 @@ export function CreateRestaurant({ userEmail, userName, onCreated }: CreateResta
 
       // Upload logo if provided
       if (logoFile && data.restaurant?.id) {
-        const supabase = createClient();
-        const ext = logoFile.name.split(".").pop();
-        const path = `restaurants/${data.restaurant.id}/logo.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from("logos")
-          .upload(path, logoFile, { upsert: true });
-
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage
-            .from("logos")
-            .getPublicUrl(path);
-
-          await fetch("/api/restaurant/update", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: data.restaurant.id,
-              logo_url: urlData.publicUrl,
-            }),
-          });
-        }
+        const formData = new FormData();
+        formData.append("file", logoFile);
+        formData.append("restaurant_id", data.restaurant.id);
+        await fetch("/api/restaurant/upload-logo", {
+          method: "POST",
+          body: formData,
+        });
       }
 
       // Move to Stripe Connect step
