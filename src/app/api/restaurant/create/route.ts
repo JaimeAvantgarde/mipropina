@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { name, slug, logo_emoji, owner_name, owner_email, owner_phone } = body;
+
+    // Get the authenticated user's ID
+    let authUserId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) authUserId = user.id;
+    } catch {
+      // No auth available
+    }
 
     // Validate required fields
     if (!name?.trim() || !slug?.trim() || !owner_name?.trim() || !owner_email?.trim()) {
@@ -53,6 +64,7 @@ export async function POST(request: Request) {
       .from("staff")
       .insert({
         restaurant_id: restaurant.id,
+        auth_user_id: authUserId,
         name: owner_name.trim(),
         email: owner_email.trim(),
         phone: owner_phone?.trim() || null,
