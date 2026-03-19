@@ -71,6 +71,14 @@ export function useDashboardData() {
     try {
       const res = await fetch("/api/dashboard/data");
 
+      if (res.status === 404) {
+        // No restaurant found — don't load mock data
+        setData(null);
+        setIsUsingMock(false);
+        setLoading(false);
+        return;
+      }
+
       if (!res.ok) {
         throw new Error("Error al cargar datos");
       }
@@ -79,16 +87,22 @@ export function useDashboardData() {
       setData(json);
       setIsUsingMock(false);
     } catch {
-      // Fallback to mock data
-      console.warn("[useDashboardData] Usando datos de prueba (Supabase no disponible)");
-      setData({
-        restaurant: mockRestaurant,
-        staff: mockStaff,
-        tips: mockTips,
-        pendingInvites: mockPendingInvites,
-        stats: computeMockStats(),
-      });
-      setIsUsingMock(true);
+      // Only use mock data if Supabase is not configured at all
+      const hasSupabase = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!hasSupabase) {
+        console.warn("[useDashboardData] Usando datos de prueba (Supabase no configurado)");
+        setData({
+          restaurant: mockRestaurant,
+          staff: mockStaff,
+          tips: mockTips,
+          pendingInvites: mockPendingInvites,
+          stats: computeMockStats(),
+        });
+        setIsUsingMock(true);
+      } else {
+        setData(null);
+        setIsUsingMock(false);
+      }
     } finally {
       setLoading(false);
     }
