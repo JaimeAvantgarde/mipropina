@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 
     if (!restaurantId) {
       return NextResponse.json(
-        { error: "No se encontró un restaurante." },
+        { error: "No se encontró un restaurante.", no_restaurant: true },
         { status: 404 }
       );
     }

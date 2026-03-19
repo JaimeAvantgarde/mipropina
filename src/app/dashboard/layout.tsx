@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { DashboardContext } from "@/lib/dashboard-context";
+import { CreateRestaurant } from "@/components/dashboard/create-restaurant";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +14,53 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data, loading, isUsingMock, refetch } = useDashboardData();
+  const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const [noRestaurant, setNoRestaurant] = useState(false);
+
+  useEffect(() => {
+    async function getUser() {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        setUser({
+          email: authUser.email || "",
+          name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "",
+        });
+      }
+    }
+    getUser();
+  }, []);
+
+  // Check if dashboard data came back with no restaurant
+  useEffect(() => {
+    if (!loading && !data?.restaurant?.id) {
+      setNoRestaurant(true);
+    } else if (data?.restaurant?.id) {
+      setNoRestaurant(false);
+    }
+  }, [loading, data]);
+
+  // Show create restaurant flow if user has no restaurant
+  if (noRestaurant && !isUsingMock && user) {
+    return (
+      <div className="min-h-screen bg-[#F5FAF7]">
+        {/* Simple top bar */}
+        <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <span className="font-[family-name:var(--font-serif)] text-xl text-[#0D1B1E]">
+            mi<span className="text-[#2ECC87]">propina</span>
+          </span>
+          <span className="text-sm text-gray-500">{user.email}</span>
+        </div>
+        <div className="p-6">
+          <CreateRestaurant
+            userEmail={user.email}
+            userName={user.name}
+            onCreated={refetch}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DashboardContext.Provider value={{ data, loading, isUsingMock, refetch }}>
