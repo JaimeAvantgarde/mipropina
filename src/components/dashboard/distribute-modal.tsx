@@ -18,12 +18,10 @@ type Method = "equal" | "custom";
 
 function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: DistributeModalProps) {
   const activeStaff = staff.filter((s) => s.active);
-  const connectedStaff = activeStaff.filter((s) => !!s.stripe_payout_id);
-  const unconnectedStaff = activeStaff.filter((s) => !s.stripe_payout_id);
 
   const [method, setMethod] = useState<Method>("equal");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    () => new Set(connectedStaff.map((s) => s.id))
+    () => new Set(activeStaff.map((s) => s.id))
   );
   const [percentages, setPercentages] = useState<Record<string, number>>({});
   const [confirmed, setConfirmed] = useState(false);
@@ -31,8 +29,8 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
   const [error, setError] = useState("");
 
   const selectedStaff = useMemo(
-    () => connectedStaff.filter((s) => selectedIds.has(s.id)),
-    [connectedStaff, selectedIds]
+    () => activeStaff.filter((s) => selectedIds.has(s.id)),
+    [activeStaff, selectedIds]
   );
 
   const selectedCount = selectedStaff.length;
@@ -220,7 +218,7 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
               </thead>
               <tbody>
                 {/* Connected staff (selectable) */}
-                {connectedStaff.map((s) => {
+                {activeStaff.map((s) => {
                   const isSelected = selectedIds.has(s.id);
                   const amt = isSelected ? (amounts[s.id] || 0) : 0;
                   const pct = method === "custom"
@@ -294,32 +292,6 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
                   );
                 })}
 
-                {/* Unconnected staff (greyed out, not selectable) */}
-                {unconnectedStaff.map((s) => (
-                  <tr key={s.id} className="border-t border-gray-50 opacity-40">
-                    <td className="pl-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={false}
-                        disabled
-                        className="w-4 h-4 rounded border-gray-300 text-gray-300 cursor-not-allowed"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{s.avatar_emoji}</span>
-                        <span className="text-sm font-medium text-gray-400">
-                          {s.name}
-                        </span>
-                        <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 rounded px-1.5 py-0.5 uppercase">
-                          Sin Stripe
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm text-gray-400">—</td>
-                    <td className="px-4 py-3 text-right text-sm text-gray-400">—</td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </div>
@@ -333,17 +305,16 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
             </div>
           )}
 
-          {/* Stripe fee note */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
-            <p className="text-xs text-amber-700">
-              Se cobrarán 2€ por cada persona que reciba una transferencia este mes
-            </p>
-            {selectedCount > 0 && (
-              <p className="text-xs font-semibold text-amber-800 mt-1">
-                Coste Stripe: {selectedCount} × 2€ = {selectedCount * 2}€
+          {/* Info note */}
+          {selectedCount > 0 && (
+            <div className="bg-[#F5FAF7] border border-[#2ECC87]/20 rounded-xl px-4 py-3 text-center">
+              <p className="text-xs text-gray-600">
+                {selectedStaff.filter(s => s.stripe_payout_id).length > 0
+                  ? `${selectedStaff.filter(s => s.stripe_payout_id).length} con Stripe → transferencia automática. ${selectedStaff.filter(s => !s.stripe_payout_id).length > 0 ? `${selectedStaff.filter(s => !s.stripe_payout_id).length} sin Stripe → pago manual (Bizum/transferencia).` : ""}`
+                  : "Sin Stripe Connect activo. El reparto queda registrado para pago manual (Bizum/transferencia)."}
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Validation */}
           {method === "custom" && selectedCount > 0 && !percentagesValid && (
