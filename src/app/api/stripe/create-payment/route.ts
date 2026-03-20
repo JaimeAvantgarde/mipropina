@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { CLIENT_FEE_CENTS, calculatePlatformFee } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -28,22 +29,27 @@ export async function POST(request: Request) {
       );
     }
 
+    const charge_amount = amount_cents + CLIENT_FEE_CENTS;
+
     const paymentIntent = await getStripe().paymentIntents.create({
-      amount: amount_cents,
+      amount: charge_amount,
       currency: "eur",
       metadata: {
         restaurant_id,
         source: "mipropina",
+        tip_amount_cents: String(amount_cents),
+        client_fee_cents: String(CLIENT_FEE_CENTS),
       },
       automatic_payment_methods: {
         enabled: true,
       },
     });
 
-    // Record pending tip in Supabase
+    // Record pending tip in Supabase (tip amount + platform fee for distribution)
     await supabaseAdmin.from("tip").insert({
       restaurant_id,
       amount_cents,
+      platform_fee_cents: calculatePlatformFee(amount_cents),
       stripe_payment_id: paymentIntent.id,
       status: "pending",
     });

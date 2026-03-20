@@ -174,6 +174,9 @@ export default function TipPage({ params }: PageProps) {
 
         {/* Footer branding */}
         <p className="text-center text-[10px] text-[#1A3C34]/30 mt-6 font-medium tracking-wide">
+          Se aplica una comisi&oacute;n de servicio de 0,20 € por transacci&oacute;n
+        </p>
+        <p className="text-center text-[10px] text-[#1A3C34]/30 mt-1 font-medium tracking-wide">
           Pagos seguros con Stripe &middot; mipropina.es
         </p>
       </div>

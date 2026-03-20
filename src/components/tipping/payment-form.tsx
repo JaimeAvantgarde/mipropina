@@ -8,7 +8,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { formatCentsShort } from "@/lib/utils";
+import { formatCentsShort, CLIENT_FEE_CENTS } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -17,6 +17,7 @@ const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 /* ───────── Stripe inner checkout form ───────── */
 
 function CheckoutForm({ amountCents, slug }: { amountCents: number; slug: string }) {
+  const totalCents = amountCents + CLIENT_FEE_CENTS;
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +46,22 @@ function CheckoutForm({ amountCents, slug }: { amountCents: number; slug: string
     <form onSubmit={handleSubmit} className="space-y-5">
       <PaymentElement options={{ layout: "tabs" }} />
 
+      {/* Desglose propina + comisión */}
+      <div className="rounded-xl bg-[#F5FAF7] border border-[#2ECC87]/20 px-4 py-3 space-y-1">
+        <div className="flex justify-between text-sm text-[#1A3C34]/70">
+          <span>Propina</span>
+          <span>{formatCentsShort(amountCents)}</span>
+        </div>
+        <div className="flex justify-between text-sm text-[#1A3C34]/70">
+          <span>Comisi&oacute;n de servicio</span>
+          <span>{formatCentsShort(CLIENT_FEE_CENTS)}</span>
+        </div>
+        <div className="border-t border-[#2ECC87]/20 pt-1 flex justify-between text-sm font-bold text-[#0D1B1E]">
+          <span>Total</span>
+          <span>{formatCentsShort(totalCents)}</span>
+        </div>
+      </div>
+
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {error}
@@ -65,7 +82,7 @@ function CheckoutForm({ amountCents, slug }: { amountCents: number; slug: string
             Procesando...
           </span>
         ) : (
-          `Pagar ${formatCentsShort(amountCents)}`
+          `Pagar ${formatCentsShort(totalCents)}`
         )}
       </button>
 
@@ -182,6 +199,7 @@ function MockPaymentForm({
   slug: string;
 }) {
   const router = useRouter();
+  const totalCents = amountCents + CLIENT_FEE_CENTS;
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");
   const [cvc, setCvc] = useState("");
@@ -208,6 +226,22 @@ function MockPaymentForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Desglose propina + comisión */}
+      <div className="rounded-xl bg-[#F5FAF7] border border-[#2ECC87]/20 px-4 py-3 space-y-1">
+        <div className="flex justify-between text-sm text-[#1A3C34]/70">
+          <span>Propina</span>
+          <span>{formatCentsShort(amountCents)}</span>
+        </div>
+        <div className="flex justify-between text-sm text-[#1A3C34]/70">
+          <span>Comisi&oacute;n de servicio</span>
+          <span>{formatCentsShort(CLIENT_FEE_CENTS)}</span>
+        </div>
+        <div className="border-t border-[#2ECC87]/20 pt-1 flex justify-between text-sm font-bold text-[#0D1B1E]">
+          <span>Total</span>
+          <span>{formatCentsShort(totalCents)}</span>
+        </div>
+      </div>
+
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="flex border-b border-gray-200">
           <button type="button" className="flex-1 py-3 px-4 text-sm font-medium text-[#0D1B1E] border-b-2 border-[#2ECC87] bg-white">
@@ -275,7 +309,7 @@ function MockPaymentForm({
             Procesando pago...
           </span>
         ) : (
-          `Pagar ${formatCentsShort(amountCents)}`
+          `Pagar ${formatCentsShort(totalCents)}`
         )}
       </button>
 

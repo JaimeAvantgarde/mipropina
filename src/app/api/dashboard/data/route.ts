@@ -99,6 +99,8 @@ export async function GET(request: Request) {
     const allTips = tips || [];
     const completedTips = allTips.filter((t: { status: string }) => t.status === "completed");
     const totalCents = completedTips.reduce((sum: number, t: { amount_cents: number }) => sum + t.amount_cents, 0);
+    const totalFeeCents = completedTips.reduce((sum: number, t: { platform_fee_cents?: number }) => sum + (t.platform_fee_cents || 0), 0);
+    const netCents = totalCents - totalFeeCents;
     const avgCents = completedTips.length > 0 ? Math.round(totalCents / completedTips.length) : 0;
 
     // Tips this week
@@ -119,6 +121,8 @@ export async function GET(request: Request) {
       currentUserRole,
       stats: {
         totalCents,
+        totalFeeCents,
+        netCents,
         tipsThisWeek: tipsThisWeek.length,
         activeStaff: activeStaff.length,
         avgCents,

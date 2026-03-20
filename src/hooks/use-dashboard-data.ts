@@ -40,6 +40,8 @@ export type DashboardData = {
   currentUserRole: "owner" | "waiter";
   stats: {
     totalCents: number;
+    totalFeeCents: number;
+    netCents: number;
     tipsThisWeek: number;
     activeStaff: number;
     avgCents: number;
@@ -59,6 +61,8 @@ export function useDashboardData() {
     const activeStaff = mockStaff.filter((s) => s.active);
     return {
       totalCents,
+      totalFeeCents: 0,
+      netCents: totalCents,
       tipsThisWeek: mockTips.length,
       activeStaff: activeStaff.length,
       avgCents,

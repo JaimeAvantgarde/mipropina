@@ -17,6 +17,15 @@ export function generateInviteCode(prefix: string): string {
   return `${prefix}-${code}`;
 }
 
+// Comisión fija que paga el cliente por cada propina
+export const CLIENT_FEE_CENTS = 20;
+
+// Comisión que se descuenta de la propina para la plataforma
+export function calculatePlatformFee(tipCents: number): number {
+  if (tipCents < 350) return 50;
+  return Math.round(tipCents * 0.15);
+}
+
 export function cn(
   ...classes: (string | false | null | undefined)[]
 ): string {

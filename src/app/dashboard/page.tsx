@@ -71,9 +71,9 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          label="Hucha acumulada"
+          label="Propinas recibidas"
           value={formatCents(stats.totalCents)}
-          subtitle="Propinas completadas sin repartir"
+          subtitle={stats.totalFeeCents > 0 ? `Neto a repartir: ${formatCents(stats.netCents)}` : "Propinas completadas sin repartir"}
         />
         <StatCard
           label="Propinas esta semana"
@@ -133,7 +133,7 @@ export default function DashboardPage() {
       <DistributeModal
         open={distributeOpen}
         onClose={() => setDistributeOpen(false)}
-        totalCents={stats.totalCents}
+        totalCents={stats.netCents ?? stats.totalCents}
         staff={activeStaff}
         restaurantId={restaurant.id}
       />
