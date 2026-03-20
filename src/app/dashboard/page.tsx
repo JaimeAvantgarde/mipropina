@@ -5,6 +5,7 @@ import { formatCents } from "@/lib/utils";
 import { useDashboard } from "@/lib/dashboard-context";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { TipHistory } from "@/components/dashboard/tip-history";
+import { TipChart } from "@/components/dashboard/tip-chart";
 import { DistributeModal } from "@/components/dashboard/distribute-modal";
 import { QRCard } from "@/components/dashboard/qr-card";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +91,11 @@ export default function DashboardPage() {
           value={formatCents(stats.avgCents)}
           subtitle="Propinas completadas"
         />
+      </div>
+
+      {/* Tip chart */}
+      <div className="mb-8">
+        <TipChart tips={tips} />
       </div>
 
       {/* Tip history */}

@@ -18,7 +18,7 @@ const steps = [
     emoji: "\uD83C\uDF89",
     title: "Tu equipo cobra",
     description:
-      "Las propinas se acumulan y tu decides como repartirlas. Transferencia SEPA directa al IBAN.",
+      "Las propinas se acumulan y tú decides cómo repartirlas. Transferencia SEPA directa al IBAN.",
   },
 ];
 
@@ -32,7 +32,7 @@ export default function HowItWorks() {
             Proceso
           </span>
           <h2 className="font-[family-name:var(--font-serif)] text-3xl text-dark sm:text-4xl md:text-5xl">
-            Como funciona?
+            ¿Cómo funciona?
           </h2>
           <p className="mt-4 text-lg text-gray-500">
             Tres pasos. Sin fricciones. Sin complicaciones.

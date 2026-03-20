@@ -34,7 +34,7 @@ export default function CTA() {
                   clipRule="evenodd"
                 />
               </svg>
-              Sin tarjeta de credito
+              Sin tarjeta de crédito
             </span>
             <span className="flex items-center gap-1.5">
               <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20">

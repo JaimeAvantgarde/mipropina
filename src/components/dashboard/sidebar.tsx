@@ -15,9 +15,11 @@ interface SidebarProps {
 }
 
 const allNavItems = [
-  { emoji: "📊", label: "Vista general", href: "/dashboard", ownerOnly: false },
-  { emoji: "👥", label: "Equipo", href: "/dashboard/equipo", ownerOnly: false },
-  { emoji: "⚙️", label: "Ajustes", href: "/dashboard/ajustes", ownerOnly: true },
+  { emoji: "\uD83D\uDCCA", label: "Vista general", href: "/dashboard", ownerOnly: false },
+  { emoji: "\uD83D\uDC65", label: "Equipo", href: "/dashboard/equipo", ownerOnly: false },
+  { emoji: "\uD83D\uDCCB", label: "Repartos", href: "/dashboard/repartos", ownerOnly: true },
+  { emoji: "\uD83D\uDC64", label: "Mi perfil", href: "/dashboard/perfil", ownerOnly: false },
+  { emoji: "\u2699\uFE0F", label: "Ajustes", href: "/dashboard/ajustes", ownerOnly: true },
 ];
 
 function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurantLogoUrl, staffRole }: SidebarProps) {

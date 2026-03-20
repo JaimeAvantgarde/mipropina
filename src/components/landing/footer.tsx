@@ -2,37 +2,31 @@ const columns = [
   {
     title: "Producto",
     links: [
-      { label: "QR para mesas", href: "#" },
-      { label: "Hucha digital", href: "#" },
-      { label: "Reparto de propinas", href: "#" },
-      { label: "Gestion de equipo", href: "#" },
+      { label: "Caracteristicas", href: "#caracteristicas" },
+      { label: "Como funciona", href: "#como-funciona" },
+      { label: "Precios", href: "#precios" },
     ],
   },
   {
     title: "Empresa",
     links: [
-      { label: "Sobre nosotros", href: "#" },
-      { label: "Contacto", href: "#" },
-      { label: "Blog", href: "#" },
-      { label: "Prensa", href: "#" },
+      { label: "Contacto", href: "mailto:contacto@mipropina.es" },
+      { label: "Registro", href: "/auth/registro-restaurante" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { label: "Privacidad", href: "#" },
-      { label: "Terminos de uso", href: "#" },
-      { label: "Cookies", href: "#" },
-      { label: "Licencias", href: "#" },
+      { label: "Privacidad", href: "/legal/privacidad" },
+      { label: "Terminos de uso", href: "/legal/terminos" },
+      { label: "Cookies", href: "/legal/cookies" },
     ],
   },
   {
     title: "Soporte",
     links: [
-      { label: "Centro de ayuda", href: "#" },
-      { label: "FAQ", href: "#" },
-      { label: "Estado del servicio", href: "#" },
-      { label: "WhatsApp", href: "#" },
+      { label: "FAQ", href: "#precios" },
+      { label: "WhatsApp", href: "https://wa.me/34635415049" },
     ],
   },
 ];
@@ -49,7 +43,7 @@ export default function Footer() {
               mi<span className="text-primary">propina</span>
             </span>
             <p className="mt-3 text-sm leading-relaxed text-white/40">
-              La forma mas facil de gestionar propinas digitales en tu negocio.
+              La forma más fácil de gestionar propinas digitales en tu negocio.
             </p>
           </div>
 
@@ -81,7 +75,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-sm text-white/30">
-            &copy; 2026 mipropina.es &mdash; Hecho con &hearts; en Espana
+            &copy; 2026 mipropina.es &mdash; Hecho con &hearts; en España
           </p>
 
           {/* Social links */}

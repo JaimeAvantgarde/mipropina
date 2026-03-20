@@ -146,9 +146,9 @@ export default function RegistroPage() {
 
         <p className="mt-6 text-center text-xs text-gray-400">
           Al registrarte aceptas los{" "}
-          <a href="#" className="underline hover:text-gray-600">términos de servicio</a>{" "}
+          <a href="/legal/terminos" className="underline hover:text-gray-600">términos de servicio</a>{" "}
           y la{" "}
-          <a href="#" className="underline hover:text-gray-600">política de privacidad</a>
+          <a href="/legal/privacidad" className="underline hover:text-gray-600">política de privacidad</a>
         </p>
       </div>
     </div>

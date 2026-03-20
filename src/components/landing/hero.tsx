@@ -179,12 +179,12 @@ export default function Hero() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5">
               <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
               <span className="text-xs font-semibold text-primary">
-                Nuevo en Espana
+                Nuevo en España
               </span>
             </div>
 
             <h1 className="font-[family-name:var(--font-serif)] text-4xl leading-tight text-white sm:text-5xl md:text-6xl lg:text-[3.5rem] xl:text-6xl">
-              La revolucion de las{" "}
+              La revolución de las{" "}
               <span className="text-primary">
                 propinas digitales
               </span>
@@ -234,7 +234,7 @@ export default function Hero() {
                 )}
               </div>
               <p className="text-sm text-white/40">
-                <span className="font-semibold text-white/60">+200</span> negocios ya confian en nosotros
+                <span className="font-semibold text-white/60">+200</span> negocios ya confían en nosotros
               </p>
             </div>
           </div>

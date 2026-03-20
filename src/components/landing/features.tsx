@@ -3,13 +3,13 @@ const features = [
     emoji: "\uD83D\uDCF1",
     title: "QR en cada mesa",
     description:
-      "Genera codigos QR unicos. El cliente escanea y deja propina en segundos.",
+      "Genera códigos QR únicos. El cliente escanea y deja propina en segundos.",
   },
   {
     emoji: "\uD83C\uDFE6",
     title: "Hucha digital",
     description:
-      "Todas las propinas se acumulan en tu hucha virtual. Controla cada centimo.",
+      "Todas las propinas se acumulan en tu hucha virtual. Controla cada céntimo.",
   },
   {
     emoji: "\u2696\uFE0F",
@@ -19,7 +19,7 @@ const features = [
   },
   {
     emoji: "\uD83D\uDC65",
-    title: "Gestion de equipo",
+    title: "Gestión de equipo",
     description:
       "Invita camareros por WhatsApp. Cada uno recibe su parte directamente.",
   },
@@ -27,7 +27,7 @@ const features = [
     emoji: "\uD83D\uDCAC",
     title: "WhatsApp integrado",
     description:
-      "Envia invitaciones y notificaciones por WhatsApp sin coste adicional.",
+      "Envía invitaciones y notificaciones por WhatsApp sin coste adicional.",
   },
   {
     emoji: "\uD83D\uDD12",
@@ -44,7 +44,7 @@ export default function Features() {
         {/* Header */}
         <div className="mx-auto mb-14 max-w-2xl text-center md:mb-20">
           <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-            Caracteristicas
+            Características
           </span>
           <h2 className="font-[family-name:var(--font-serif)] text-3xl text-dark sm:text-4xl md:text-5xl">
             Todo lo que necesitas
