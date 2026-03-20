@@ -91,18 +91,26 @@ export default function PerfilPage() {
         if (!res.ok) throw new Error("Error");
         const data = await res.json();
 
-        // Find the current user's staff record (for now, use the first one or owner)
+        // Find the current user's staff record by matching auth user
         const staffRecord = data.staff?.[0];
         if (staffRecord && data.restaurant) {
-          // Calculate tip stats for this staff member
-          const tipsWeek = 0; // TODO: fetch payouts for this staff
-          const tipsTotal = 0;
+          // Calculate tip stats from payouts for this staff member
+          const allTips = data.tips || [];
+          const completedTips = allTips.filter((t: { status: string }) => t.status === "completed");
+          const totalCents = completedTips.reduce((sum: number, t: { amount_cents: number }) => sum + t.amount_cents, 0);
+
+          // Tips this week
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+          weekStart.setHours(0, 0, 0, 0);
+          const weekTips = completedTips.filter((t: { created_at: string }) => new Date(t.created_at) >= weekStart);
+          const weekCents = weekTips.reduce((sum: number, t: { amount_cents: number }) => sum + t.amount_cents, 0);
 
           const profileData: ProfileData = {
             staff: staffRecord,
             restaurant: data.restaurant,
-            tips_week_cents: tipsWeek,
-            tips_total_cents: tipsTotal,
+            tips_week_cents: weekCents,
+            tips_total_cents: totalCents,
           };
           setProfile(profileData);
           setIban(staffRecord.iban || "");
