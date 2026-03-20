@@ -10,6 +10,7 @@ interface SidebarProps {
   onToggle: () => void;
   restaurantName?: string;
   restaurantEmoji?: string;
+  restaurantLogoUrl?: string | null;
   staffRole?: string;
 }
 
@@ -19,7 +20,7 @@ const allNavItems = [
   { emoji: "⚙️", label: "Ajustes", href: "/dashboard/ajustes", ownerOnly: true },
 ];
 
-function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, staffRole }: SidebarProps) {
+function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurantLogoUrl, staffRole }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const isOwner = staffRole === "owner";
@@ -91,9 +92,15 @@ function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, staffRole 
         {/* Bottom section */}
         <div className="px-6 pb-8 border-t border-white/10 pt-6 mt-auto">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-[#2ECC87]/20 flex items-center justify-center text-lg">
-              {restaurantEmoji || "🍽️"}
-            </div>
+            {restaurantLogoUrl ? (
+              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                <img src={restaurantLogoUrl} alt={restaurantName || ""} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-[#2ECC87]/20 flex items-center justify-center text-lg">
+                {restaurantEmoji || "\uD83C\uDF7D\uFE0F"}
+              </div>
+            )}
             <div>
               <p className="text-white text-sm font-semibold leading-tight">
                 {restaurantName || "Mi Restaurante"}
