@@ -30,17 +30,15 @@ export async function POST(request: Request) {
 
     let accountId = staff.stripe_payout_id;
 
-    // Create Stripe Connect account (recipient — only receives transfers, no card payments)
+    // Create Stripe Connect Express account
     if (!accountId) {
       const account = await getStripe().accounts.create({
-        type: "custom",
+        type: "express",
         country: "ES",
         email: staff.email,
         capabilities: {
+          card_payments: { requested: true },
           transfers: { requested: true },
-        },
-        tos_acceptance: {
-          service_agreement: "recipient",
         },
         business_type: "individual",
         metadata: {
