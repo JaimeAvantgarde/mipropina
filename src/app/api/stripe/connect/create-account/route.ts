@@ -30,14 +30,16 @@ export async function POST(request: Request) {
 
     let accountId = restaurant.stripe_account_id;
 
-    // Create Stripe Connect Express account if doesn't exist
+    // Create Stripe Connect account (recipient — only receives transfers, no card payments)
     if (!accountId) {
       const account = await getStripe().accounts.create({
-        type: "express",
+        type: "custom",
         country: "ES",
         capabilities: {
-          card_payments: { requested: true },
           transfers: { requested: true },
+        },
+        tos_acceptance: {
+          service_agreement: "recipient",
         },
         business_type: "individual",
         metadata: {

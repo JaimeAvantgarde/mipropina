@@ -30,14 +30,17 @@ export async function POST(request: Request) {
 
     let accountId = staff.stripe_payout_id;
 
-    // Create Stripe Connect Express account if doesn't exist
+    // Create Stripe Connect account (recipient — only receives transfers, no card payments)
     if (!accountId) {
       const account = await getStripe().accounts.create({
-        type: "express",
+        type: "custom",
         country: "ES",
         email: staff.email,
         capabilities: {
           transfers: { requested: true },
+        },
+        tos_acceptance: {
+          service_agreement: "recipient",
         },
         business_type: "individual",
         metadata: {
@@ -59,8 +62,8 @@ export async function POST(request: Request) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://mipropina.es";
     const accountLink = await getStripe().accountLinks.create({
       account: accountId,
-      refresh_url: `${appUrl}/perfil?stripe=refresh`,
-      return_url: `${appUrl}/perfil?stripe=success`,
+      refresh_url: `${appUrl}/dashboard/perfil?stripe=refresh`,
+      return_url: `${appUrl}/dashboard/perfil?stripe=success`,
       type: "account_onboarding",
     });
 
