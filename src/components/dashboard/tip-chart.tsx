@@ -36,7 +36,7 @@ function TipChart({ tips }: TipChartProps) {
       const tipDate = new Date(tip.created_at).toISOString().split("T")[0];
       const day = days.find((d) => d.date === tipDate);
       if (day) {
-        day.cents += tip.amount_cents;
+        day.cents += tip.amount_cents - (tip.platform_fee_cents || 0);
         day.count += 1;
       }
     }

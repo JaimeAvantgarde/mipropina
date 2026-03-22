@@ -130,9 +130,9 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          label="Total recibido"
-          value={formatCents(stats.totalCents)}
-          subtitle={stats.totalFeeCents > 0 ? `Neto a repartir: ${formatCents(stats.netCents)}` : "Propinas completadas"}
+          label="Disponible para repartir"
+          value={formatCents(stats.netCents)}
+          subtitle={`${tips.filter(t => t.status === "completed").length} propina${tips.filter(t => t.status === "completed").length !== 1 ? "s" : ""} completada${tips.filter(t => t.status === "completed").length !== 1 ? "s" : ""}`}
           icon={<CoinsIcon />}
           accent="#2ECC87"
         />
@@ -151,8 +151,8 @@ export default function DashboardPage() {
           accent="#F59E0B"
         />
         <StatCard
-          label="Media"
-          value={formatCents(stats.avgCents)}
+          label="Media neta"
+          value={formatCents(stats.avgCents > 0 ? Math.round(stats.netCents / tips.filter(t => t.status === "completed").length) : 0)}
           subtitle="Por propina"
           icon={<AvgIcon />}
           accent="#EC4899"

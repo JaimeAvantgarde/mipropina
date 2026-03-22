@@ -55,7 +55,7 @@ function TipHistory({ tips }: TipHistoryProps) {
                             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                           </svg>
                         </div>
-                        <span className="font-bold text-[#0D1B1E]">{formatCents(tip.amount_cents)}</span>
+                        <span className="font-bold text-[#0D1B1E]">{formatCents(tip.amount_cents - (tip.platform_fee_cents || 0))}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
@@ -91,7 +91,7 @@ function TipHistory({ tips }: TipHistoryProps) {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-bold text-[#0D1B1E]">{formatCents(tip.amount_cents)}</p>
+                    <p className="font-bold text-[#0D1B1E]">{formatCents(tip.amount_cents - (tip.platform_fee_cents || 0))}</p>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {getRelativeTime(tip.created_at)}
                     </p>

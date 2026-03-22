@@ -17,11 +17,11 @@ const mockRestaurant: Restaurant = {
 };
 
 const mockTips: Tip[] = [
-  { id: "1", restaurant_id: "demo", amount_cents: 500, stripe_payment_id: "pi_1", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-  { id: "2", restaurant_id: "demo", amount_cents: 300, stripe_payment_id: "pi_2", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
-  { id: "3", restaurant_id: "demo", amount_cents: 1000, stripe_payment_id: "pi_3", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-  { id: "4", restaurant_id: "demo", amount_cents: 200, stripe_payment_id: "pi_4", status: "pending", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
-  { id: "5", restaurant_id: "demo", amount_cents: 2000, stripe_payment_id: "pi_5", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+  { id: "1", restaurant_id: "demo", amount_cents: 500, platform_fee_cents: 75, stripe_payment_id: "pi_1", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+  { id: "2", restaurant_id: "demo", amount_cents: 300, platform_fee_cents: 50, stripe_payment_id: "pi_2", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
+  { id: "3", restaurant_id: "demo", amount_cents: 1000, platform_fee_cents: 150, stripe_payment_id: "pi_3", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+  { id: "4", restaurant_id: "demo", amount_cents: 200, platform_fee_cents: 50, stripe_payment_id: "pi_4", status: "pending", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
+  { id: "5", restaurant_id: "demo", amount_cents: 2000, platform_fee_cents: 300, stripe_payment_id: "pi_5", status: "completed", customer_session: null, created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
 ];
 
 const mockStaff: Staff[] = [

@@ -33,6 +33,7 @@ export type Tip = {
   id: string;
   restaurant_id: string;
   amount_cents: number;
+  platform_fee_cents: number;
   stripe_payment_id: string;
   status: TipStatus;
   customer_session: string | null;
