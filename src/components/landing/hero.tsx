@@ -1,23 +1,141 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+/* ------------------------------------------------------------------ */
+/*  Phone Demo – 3 pantallas animadas                                  */
+/* ------------------------------------------------------------------ */
+
+function ScreenScan() {
+  return (
+    <div className="flex flex-col items-center justify-center px-5 py-6">
+      {/* QR icon */}
+      <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-dashed border-[#2ECC87]/40 bg-[#2ECC87]/5">
+        <svg
+          className="h-16 w-16 text-[#2ECC87]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13.5 14.625v2.25m0 3.375h3.375m-3.375 0v-3.375m0 0h3.375m0 0v3.375m0-3.375h2.25m-2.25 0v-2.25"
+          />
+        </svg>
+      </div>
+      <p className="text-sm font-bold text-gray-800">Escanea el QR de tu mesa</p>
+      <p className="mt-1 text-xs text-gray-400">La Tasca de Mar&iacute;a</p>
+    </div>
+  );
+}
+
+function ScreenChoose() {
+  const amounts = [2, 5, 10, 20];
+  const selected = 5;
+
+  return (
+    <div className="px-5 py-4">
+      {/* Restaurant mini header */}
+      <div className="mb-3 text-center">
+        <p className="text-[13px] font-bold text-gray-800">La Tasca de Mar&iacute;a</p>
+        <p className="text-[10px] text-gray-400">Mesa 4</p>
+      </div>
+
+      {/* Label */}
+      <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+        Elige la propina
+      </p>
+
+      {/* Amount grid */}
+      <div className="mb-3 grid grid-cols-4 gap-1.5">
+        {amounts.map((a) => (
+          <div
+            key={a}
+            className={`rounded-xl py-2 text-center text-xs font-bold transition-all ${
+              a === selected
+                ? "bg-[#2ECC87] text-white shadow-[0_4px_12px_rgba(46,204,135,0.35)] scale-105"
+                : "bg-white text-gray-600 shadow-sm"
+            }`}
+          >
+            {a}&euro;
+          </div>
+        ))}
+      </div>
+
+      {/* Custom amount */}
+      <div className="mb-3 flex items-center rounded-xl bg-white px-3 py-2 shadow-sm">
+        <span className="text-[11px] text-gray-400">Otra cantidad:</span>
+        <span className="ml-auto text-[11px] font-bold text-gray-300">0,00 &euro;</span>
+      </div>
+
+      {/* Pay button */}
+      <div className="rounded-2xl bg-[#2ECC87] py-3 text-center text-xs font-bold text-white shadow-[0_6px_20px_rgba(46,204,135,0.4)]">
+        Dejar propina &middot; 5,00 &euro;
+      </div>
+    </div>
+  );
+}
+
+function ScreenDone() {
+  return (
+    <div className="flex flex-col items-center justify-center px-5 py-8">
+      {/* Animated check */}
+      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#2ECC87]/15 animate-[scaleIn_0.5s_ease-out]">
+        <svg
+          className="h-10 w-10 text-[#2ECC87]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        </svg>
+      </div>
+      <p className="text-sm font-bold text-gray-800">&iexcl;Gracias por tu propina!</p>
+      <p className="mt-1.5 text-center text-xs leading-relaxed text-gray-400">
+        El equipo de La Tasca<br />te lo agradece
+      </p>
+    </div>
+  );
+}
 
 function PhoneMockup() {
+  const [step, setStep] = useState(0);
+  const screens = [ScreenScan, ScreenChoose, ScreenDone];
+
+  const goTo = useCallback((idx: number) => setStep(idx), []);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setStep((prev) => (prev + 1) % 3);
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  const Screen = screens[step];
+
   return (
-    <div className="relative mx-auto w-[280px] sm:w-[300px]">
+    <div className="relative mx-auto w-[260px] sm:w-[280px]">
       {/* Phone frame */}
       <div className="rounded-[2.5rem] border-[6px] border-white/10 bg-[#111] p-2 shadow-2xl">
         {/* Notch */}
         <div className="relative">
           <div className="absolute left-1/2 top-0 z-10 h-6 w-28 -translate-x-1/2 rounded-b-2xl bg-[#111]" />
         </div>
+
         {/* Screen */}
         <div className="overflow-hidden rounded-[2rem] bg-[#F5FAF7]">
           {/* Status bar */}
           <div className="flex items-center justify-between bg-white px-5 pb-2 pt-8">
             <span className="text-[10px] font-semibold text-gray-800">9:41</span>
             <div className="flex items-center gap-1">
-              <div className="h-2.5 w-2.5 rounded-full border-2 border-gray-800" />
               <div className="flex gap-0.5">
                 <div className="h-2 w-0.5 rounded-full bg-gray-800" />
                 <div className="h-2.5 w-0.5 rounded-full bg-gray-800" />
@@ -32,119 +150,88 @@ function PhoneMockup() {
             </div>
           </div>
 
-          {/* App content */}
-          <div className="px-5 pb-6 pt-3">
-            {/* Restaurant header */}
-            <div className="mb-4 text-center">
-              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
-                <span className="text-lg">🍽</span>
+          {/* Animated screen area */}
+          <div className="relative min-h-[260px]">
+            {screens.map((S, i) => (
+              <div
+                key={i}
+                className="absolute inset-0 transition-all duration-500 ease-in-out"
+                style={{
+                  opacity: step === i ? 1 : 0,
+                  transform: step === i ? "translateY(0)" : "translateY(12px)",
+                  pointerEvents: step === i ? "auto" : "none",
+                }}
+              >
+                <S />
               </div>
-              <p className="text-[13px] font-bold text-gray-900">Restaurante El Olivo</p>
-              <p className="text-[11px] text-gray-500">Mesa 7 &middot; Camarero: Pablo</p>
-            </div>
+            ))}
+          </div>
 
-            {/* Tip label */}
-            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-              Elige la propina
-            </p>
-
-            {/* Amount chips */}
-            <div className="mb-4 grid grid-cols-4 gap-2">
-              {["1", "2", "3", "5"].map((amount, i) => (
-                <button
-                  key={amount}
-                  className={`rounded-xl py-2.5 text-center text-sm font-bold transition-all ${
-                    i === 2
-                      ? "bg-primary text-white shadow-[0_4px_12px_rgba(46,204,135,0.35)] scale-105"
-                      : "bg-white text-gray-700 shadow-sm hover:shadow-md"
-                  }`}
-                >
-                  {amount}&euro;
-                </button>
-              ))}
-            </div>
-
-            {/* Custom amount */}
-            <div className="mb-4 flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 shadow-sm">
-              <span className="text-sm text-gray-400">Otra cantidad:</span>
-              <span className="ml-auto text-sm font-bold text-gray-800">3,00 &euro;</span>
-            </div>
-
-            {/* Pay button */}
-            <button className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-white shadow-[0_6px_20px_rgba(46,204,135,0.4)] transition-transform hover:scale-[1.02]">
-              Dejar propina &middot; 3,00 &euro;
-            </button>
-
-            {/* Security badge */}
-            <div className="mt-3 flex items-center justify-center gap-1.5">
-              <svg className="h-3 w-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-              <span className="text-[10px] text-gray-400">Pago seguro con Stripe</span>
-            </div>
+          {/* Security badge */}
+          <div className="flex items-center justify-center gap-1.5 pb-4">
+            <svg className="h-3 w-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-[10px] text-gray-400">Pago seguro con Stripe</span>
           </div>
         </div>
       </div>
 
-      {/* Glow effect behind phone */}
-      <div className="absolute -inset-8 -z-10 rounded-full bg-primary/10 blur-3xl" />
-    </div>
-  );
-}
+      {/* Step dots */}
+      <div className="mt-4 flex items-center justify-center gap-2">
+        {["Escanea", "Elige", "Listo"].map((label, i) => (
+          <button
+            key={label}
+            onClick={() => goTo(i)}
+            className="flex flex-col items-center gap-1"
+            aria-label={label}
+          >
+            <div
+              className={`h-2 rounded-full transition-all duration-300 ${
+                step === i
+                  ? "w-6 bg-[#2ECC87]"
+                  : "w-2 bg-white/20 hover:bg-white/40"
+              }`}
+            />
+            <span
+              className={`text-[9px] font-medium transition-colors ${
+                step === i ? "text-[#2ECC87]" : "text-white/30"
+              }`}
+            >
+              {label}
+            </span>
+          </button>
+        ))}
+      </div>
 
-function FloatingParticles() {
-  const canvasRef = useRef<HTMLDivElement>(null);
+      {/* Glow */}
+      <div className="absolute -inset-8 -z-10 rounded-full bg-[#2ECC87]/10 blur-3xl" />
 
-  useEffect(() => {
-    // Particles are pure CSS, no JS needed
-  }, []);
-
-  return (
-    <div ref={canvasRef} className="pointer-events-none absolute inset-0 overflow-hidden">
-      {[...Array(5)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full bg-primary/30"
-          style={{
-            width: `${6 + i * 3}px`,
-            height: `${6 + i * 3}px`,
-            left: `${15 + i * 18}%`,
-            top: `${20 + (i % 3) * 25}%`,
-            animation: `floatParticle${i} ${8 + i * 2}s ease-in-out infinite`,
-          }}
-        />
-      ))}
+      {/* Scale-in keyframe for check icon */}
       <style>{`
-        @keyframes floatParticle0 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
-          50% { transform: translate(30px, -40px) scale(1.2); opacity: 0.7; }
-        }
-        @keyframes floatParticle1 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-          50% { transform: translate(-25px, -50px) scale(1.4); opacity: 0.6; }
-        }
-        @keyframes floatParticle2 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-          50% { transform: translate(40px, 30px) scale(1.1); opacity: 0.8; }
-        }
-        @keyframes floatParticle3 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-          50% { transform: translate(-35px, -20px) scale(1.3); opacity: 0.5; }
-        }
-        @keyframes floatParticle4 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
-          50% { transform: translate(20px, -60px) scale(1.2); opacity: 0.6; }
+        @keyframes scaleIn {
+          0% { transform: scale(0.3); opacity: 0; }
+          60% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Trust Bar                                                          */
+/* ------------------------------------------------------------------ */
+
 function TrustBar() {
   const badges = ["Visa", "Mastercard", "Apple Pay", "Google Pay", "SEPA"];
 
   return (
-    <div className="border-t border-white/5 bg-dark/50 py-8">
+    <div className="border-t border-white/5 bg-[#0D1B1E]/50 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="mb-4 text-center text-sm font-medium text-white/40">
           Compatible con
@@ -153,7 +240,7 @@ function TrustBar() {
           {badges.map((name) => (
             <span
               key={name}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold tracking-wide text-white/50 transition-colors hover:border-primary/30 hover:text-white/70"
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold tracking-wide text-white/50 transition-colors hover:border-[#2ECC87]/30 hover:text-white/70"
             >
               {name}
             </span>
@@ -164,40 +251,46 @@ function TrustBar() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Hero                                                               */
+/* ------------------------------------------------------------------ */
+
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-dark">
-      <FloatingParticles />
-
+    <section className="relative overflow-hidden bg-[#0D1B1E]">
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-dark via-dark to-primary/10" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0D1B1E] via-[#0D1B1E] to-[#2ECC87]/8" />
 
-      <div className="relative mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 md:pt-36 md:pb-24 lg:px-8 lg:pt-40 lg:pb-32">
+      <div className="relative mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 md:pt-36 md:pb-24 lg:px-8 lg:pt-40 lg:pb-28">
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* Text content */}
+          {/* ---- Text content ---- */}
           <div className="text-center lg:text-left">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-              <span className="text-xs font-semibold text-primary">
-                Nuevo en España
+            {/* Badge */}
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#2ECC87]/20 bg-[#2ECC87]/10 px-4 py-1.5">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-[#2ECC87]" />
+              <span className="text-xs font-semibold text-[#2ECC87]">
+                Nuevo en Espa&ntilde;a
               </span>
             </div>
 
+            {/* Headline */}
             <h1 className="font-[family-name:var(--font-serif)] text-4xl leading-tight text-white sm:text-5xl md:text-6xl lg:text-[3.5rem] xl:text-6xl">
-              La revolución de las{" "}
-              <span className="text-primary">
-                propinas digitales
+              Propinas digitales.{" "}
+              <span className="text-[#2ECC87]">
+                Sin efectivo, sin l&iacute;os.
               </span>
             </h1>
 
+            {/* Subtitle */}
             <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-white/60 lg:mx-0">
-              Tus clientes escanean, dejan propina y tu equipo cobra. Sin efectivo, sin complicaciones.
+              Tus clientes escanean un QR, dejan propina desde el m&oacute;vil y tu equipo cobra directamente en su cuenta bancaria.
             </p>
 
+            {/* CTAs */}
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
               <a
                 href="/auth/registro-restaurante"
-                className="group w-full rounded-full bg-primary px-8 py-4 text-center text-base font-bold text-dark shadow-[0_8px_30px_rgba(46,204,135,0.3)] transition-all hover:bg-primary/90 hover:shadow-[0_8px_40px_rgba(46,204,135,0.45)] sm:w-auto"
+                className="group w-full rounded-full bg-[#2ECC87] px-8 py-4 text-center text-base font-bold text-[#0D1B1E] shadow-[0_8px_30px_rgba(46,204,135,0.3)] transition-all hover:bg-[#2ECC87]/90 hover:shadow-[0_8px_40px_rgba(46,204,135,0.45)] sm:w-auto"
               >
                 Empieza gratis
                 <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">
@@ -208,38 +301,26 @@ export default function Hero() {
                 href="#como-funciona"
                 className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 px-8 py-4 text-base font-medium text-white/80 transition-all hover:border-white/30 hover:text-white sm:w-auto"
               >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                Ver demo
+                &iquest;C&oacute;mo funciona?
               </a>
             </div>
 
-            {/* Social proof */}
-            <div className="mt-10 flex items-center justify-center gap-6 lg:justify-start">
-              <div className="flex -space-x-2">
-                {["bg-blue-400", "bg-amber-400", "bg-rose-400", "bg-emerald-400"].map(
-                  (color, i) => (
-                    <div
-                      key={i}
-                      className={`h-8 w-8 rounded-full border-2 border-dark ${color} flex items-center justify-center text-[10px] font-bold text-white`}
-                    >
-                      {["JM", "AL", "CR", "PS"][i]}
-                    </div>
-                  )
-                )}
-              </div>
-              <p className="text-sm text-white/40">
-                <span className="font-semibold text-white/60">+200</span> negocios ya confían en nosotros
-              </p>
+            {/* Mini stats */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
+              {[
+                { value: "0\u20AC", label: "cuota mensual" },
+                { value: "5 min", label: "listo en" },
+                { value: "Stripe", label: "pagos con" },
+              ].map((stat) => (
+                <div key={stat.label} className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-[#2ECC87]">{stat.value}</span>
+                  <span className="text-sm text-white/40">{stat.label}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Phone mockup */}
+          {/* ---- Phone mockup demo ---- */}
           <div className="flex justify-center lg:justify-end">
             <PhoneMockup />
           </div>

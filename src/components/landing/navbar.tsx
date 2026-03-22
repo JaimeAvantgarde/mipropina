@@ -19,8 +19,8 @@ export default function Navbar() {
   }, [mobileOpen]);
 
   const navLinks = [
-    { label: "Como funciona", href: "#como-funciona" },
-    { label: "Caracteristicas", href: "#caracteristicas" },
+    { label: "Cómo funciona", href: "#como-funciona" },
+    { label: "Características", href: "#caracteristicas" },
     { label: "Precios", href: "#precios" },
   ];
 

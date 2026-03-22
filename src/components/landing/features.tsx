@@ -1,56 +1,79 @@
 const features = [
   {
-    emoji: "\uD83D\uDCF1",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ECC87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+      </svg>
+    ),
     title: "QR en cada mesa",
-    description:
-      "Genera códigos QR únicos. El cliente escanea y deja propina en segundos.",
+    description: "Genera un QR para tu restaurante. El cliente lo escanea con la cámara y deja propina en segundos. Sin apps, sin registro.",
   },
   {
-    emoji: "\uD83C\uDFE6",
-    title: "Hucha digital",
-    description:
-      "Todas las propinas se acumulan en tu hucha virtual. Controla cada céntimo.",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ECC87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+      </svg>
+    ),
+    title: "Todo bajo control",
+    description: "Ve cada propina en tiempo real desde tu panel. Cuánto entra, cuándo, y cuánto tienes para repartir.",
   },
   {
-    emoji: "\u2696\uFE0F",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ECC87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <line x1="19" y1="8" x2="19" y2="14" />
+        <line x1="22" y1="11" x2="16" y2="11" />
+      </svg>
+    ),
+    title: "Invita al equipo",
+    description: "Añade camareros con un link de WhatsApp. Cada uno tiene su perfil y puede conectar su cuenta bancaria.",
+  },
+  {
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ECC87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M8 12l2.5 2.5L16 9" />
+      </svg>
+    ),
     title: "Reparto justo",
-    description:
-      "Distribuye las propinas equitativamente o personaliza el reparto por horas.",
+    description: "Reparte equitativamente o personaliza por porcentaje. El dinero llega directo al IBAN de cada persona.",
   },
   {
-    emoji: "\uD83D\uDC65",
-    title: "Gestión de equipo",
-    description:
-      "Invita camareros por WhatsApp. Cada uno recibe su parte directamente.",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ECC87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+    ),
+    title: "Apple Pay, Google Pay, tarjeta",
+    description: "El cliente paga como quiera. Stripe procesa todo con 3D Secure y cifrado de extremo a extremo.",
   },
   {
-    emoji: "\uD83D\uDCAC",
-    title: "WhatsApp integrado",
-    description:
-      "Envía invitaciones y notificaciones por WhatsApp sin coste adicional.",
-  },
-  {
-    emoji: "\uD83D\uDD12",
-    title: "Pagos seguros",
-    description:
-      "Stripe procesa todos los pagos. PSD2, 3D Secure y cifrado de extremo a extremo.",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2ECC87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    ),
+    title: "Sin cuotas ni sorpresas",
+    description: "0 € al mes. Solo una pequeña comisión cuando recibes propinas. Sabes lo que pagas antes de empezar.",
   },
 ];
 
 export default function Features() {
   return (
-    <section id="caracteristicas" className="bg-[#F5FAF7] py-20 md:py-28">
+    <section id="caracteristicas" className="bg-white py-20 md:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mx-auto mb-14 max-w-2xl text-center md:mb-20">
-          <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-            Características
-          </span>
-          <h2 className="font-[family-name:var(--font-serif)] text-3xl text-dark sm:text-4xl md:text-5xl">
-            Todo lo que necesitas
+          <h2 className="font-[family-name:var(--font-serif)] text-3xl text-[#0D1B1E] sm:text-4xl md:text-5xl">
+            Todo lo que tu restaurante necesita
           </h2>
           <p className="mt-4 text-lg text-gray-500">
-            Una sola plataforma para gestionar las propinas de tu negocio de principio a fin.
+            De la propina en la mesa al IBAN del camarero. Sin intermediarios, sin papeleo.
           </p>
         </div>
 
@@ -59,15 +82,15 @@ export default function Features() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="group rounded-2xl bg-white p-8 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="group relative rounded-2xl border border-gray-100 bg-white p-8 transition-all duration-300 hover:border-[#2ECC87]/30 hover:shadow-[0_8px_30px_rgba(46,204,135,0.08)]"
             >
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-3xl transition-colors group-hover:bg-primary/20">
-                {feature.emoji}
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5FAF7] transition-colors group-hover:bg-[#2ECC87]/10">
+                {feature.icon}
               </div>
-              <h3 className="mb-2 text-lg font-bold text-dark">
+              <h3 className="mb-2 text-lg font-bold text-[#0D1B1E]">
                 {feature.title}
               </h3>
-              <p className="leading-relaxed text-gray-500">
+              <p className="leading-relaxed text-gray-500 text-[15px]">
                 {feature.description}
               </p>
             </div>
