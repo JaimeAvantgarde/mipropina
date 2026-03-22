@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireOwner } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,9 @@ export async function POST(request: Request) {
     if (!restaurant_id || !payouts?.length) {
       return NextResponse.json({ error: "Datos incompletos." }, { status: 400 });
     }
+
+    const { auth, error: authError } = await requireOwner(restaurant_id);
+    if (authError) return authError;
 
     // Fetch staff records to get stripe_payout_id
     const staffIds = payouts.map((p: any) => p.staff_id);
@@ -27,7 +31,7 @@ export async function POST(request: Request) {
     const totalCents = payouts.reduce((sum: number, p: any) => sum + p.amount_cents, 0);
     const now = new Date();
     const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay() + 1);
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
 
     const { data: distribution, error: distError } = await supabaseAdmin
       .from("distribution")

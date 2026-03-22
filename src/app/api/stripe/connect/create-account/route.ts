@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireOwner } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const { auth, error: authError } = await requireOwner(restaurant_id);
+    if (authError) return authError;
 
     // Check if restaurant already has a Stripe account
     const { data: restaurant } = await supabaseAdmin

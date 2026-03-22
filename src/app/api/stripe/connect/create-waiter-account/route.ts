@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireAuth } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const { auth, error: authError } = await requireAuth();
+    if (authError) return authError;
+
     // Fetch staff record
     const { data: staff, error: staffError } = await supabaseAdmin
       .from("staff")
@@ -26,6 +30,10 @@ export async function POST(request: Request) {
         { error: "Empleado no encontrado." },
         { status: 404 }
       );
+    }
+
+    if (staff.restaurant_id !== auth.restaurantId) {
+      return NextResponse.json({ error: "No tienes acceso a este perfil." }, { status: 403 });
     }
 
     let accountId = staff.stripe_payout_id;

@@ -20,7 +20,11 @@ export const metadata: Metadata = {
   title: "mipropina.es — Propinas digitales para restaurantes",
   description:
     "Recibe propinas digitales por QR. Sin efectivo, sin complicaciones. La forma más fácil de gestionar propinas en tu restaurante.",
-  keywords: ["propinas", "digital", "restaurante", "QR", "pagos", "camareros"],
+  keywords: ["propinas", "digital", "restaurante", "QR", "pagos", "camareros", "hostelería", "España"],
+  metadataBase: new URL("https://mipropina.es"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "mipropina.es — Propinas digitales para restaurantes",
     description: "Recibe propinas digitales por QR. Sin efectivo, sin complicaciones.",
@@ -28,6 +32,24 @@ export const metadata: Metadata = {
     siteName: "mipropina.es",
     locale: "es_ES",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "mipropina.es — Propinas digitales para restaurantes",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "mipropina.es — Propinas digitales para restaurantes",
+    description: "Recibe propinas digitales por QR. Sin efectivo, sin complicaciones.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

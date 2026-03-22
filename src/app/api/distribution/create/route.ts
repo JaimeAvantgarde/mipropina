@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireOwner } from "@/lib/auth";
 
 type PayoutEntry = {
   staff_id: string;
@@ -39,23 +39,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the authenticated user's staff ID
-    let createdBy = restaurant_id;
-    try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: staffRecord } = await supabaseAdmin
-          .from("staff")
-          .select("id")
-          .eq("auth_user_id", user.id)
-          .eq("restaurant_id", restaurant_id)
-          .single();
-        if (staffRecord) createdBy = staffRecord.id;
-      }
-    } catch {
-      // Fallback to restaurant_id
-    }
+    const { auth, error: authError } = await requireOwner(restaurant_id);
+    if (authError) return authError;
 
     // Create distribution record
     const now = new Date();
@@ -72,7 +57,7 @@ export async function POST(request: Request) {
         total_cents: totalCents,
         method: method || "equal",
         status: "distributed",
-        created_by: createdBy,
+        created_by: auth.staffId,
       })
       .select()
       .single();

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getWhatsAppLink } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireOwner } from "@/lib/auth";
 
 function generateToken(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -22,6 +23,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const { auth, error: authError } = await requireOwner(restaurant_id);
+    if (authError) return authError;
 
     if (!name || typeof name !== "string" || name.trim().length < 2) {
       return NextResponse.json(

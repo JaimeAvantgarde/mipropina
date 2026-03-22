@@ -2,60 +2,35 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // Try to get the authenticated user first
-    let restaurantId: string | null = null;
-    let currentUserRole: string = "waiter";
+    // Require authenticated user
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        // Get staff record for this user to find their restaurant
-        const { data: staffRecord } = await supabaseAdmin
-          .from("staff")
-          .select("restaurant_id, role")
-          .eq("auth_user_id", user.id)
-          .single();
-
-        if (staffRecord) {
-          restaurantId = staffRecord.restaurant_id;
-          currentUserRole = staffRecord.role || "waiter";
-        }
-      }
-    } catch {
-      // Auth not available, fall through to query param
+    if (!user) {
+      return NextResponse.json(
+        { error: "No autenticado.", no_restaurant: true },
+        { status: 401 }
+      );
     }
 
-    // Fallback: use restaurant_id from query param (dev mode)
-    if (!restaurantId) {
-      const { searchParams } = new URL(request.url);
-      restaurantId = searchParams.get("restaurant_id");
-    }
+    // Get staff record for this user
+    const { data: staffRecord } = await supabaseAdmin
+      .from("staff")
+      .select("restaurant_id, role")
+      .eq("auth_user_id", user.id)
+      .single();
 
-    if (!restaurantId) {
-      // Try to get the first restaurant as fallback for dev
-      const { data: firstRestaurant } = await supabaseAdmin
-        .from("restaurant")
-        .select("id")
-        .limit(1)
-        .single();
-
-      if (firstRestaurant) {
-        restaurantId = firstRestaurant.id;
-        // In fallback mode, assume owner role (dev/single-restaurant)
-        currentUserRole = "owner";
-      }
-    }
-
-    if (!restaurantId) {
+    if (!staffRecord) {
       return NextResponse.json(
         { error: "No se encontró un restaurante.", no_restaurant: true },
         { status: 404 }
       );
     }
+
+    const restaurantId = staffRecord.restaurant_id;
+    const currentUserRole = staffRecord.role || "waiter";
 
     // Fetch restaurant
     const { data: restaurant, error: restError } = await supabaseAdmin
@@ -105,7 +80,7 @@ export async function GET(request: Request) {
 
     // Tips this week
     const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Monday
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
     weekStart.setHours(0, 0, 0, 0);
     const tipsThisWeek = allTips.filter(
       (t: { created_at: string }) => new Date(t.created_at) >= weekStart

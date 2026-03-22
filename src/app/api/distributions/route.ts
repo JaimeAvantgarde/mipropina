@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
+    const { auth, error: authError } = await requireAuth();
+    if (authError) return authError;
+
     const { searchParams } = new URL(request.url);
     const restaurantId = searchParams.get("restaurant_id");
 
@@ -11,6 +15,10 @@ export async function GET(request: Request) {
         { error: "restaurant_id es obligatorio." },
         { status: 400 }
       );
+    }
+
+    if (restaurantId !== auth.restaurantId) {
+      return NextResponse.json({ error: "No tienes acceso a estos datos." }, { status: 403 });
     }
 
     // Fetch distributions ordered by most recent

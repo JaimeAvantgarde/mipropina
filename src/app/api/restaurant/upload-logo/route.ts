@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireOwner } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    const { auth, error: authError } = await requireOwner(restaurantId);
+    if (authError) return authError;
 
     const ext = file.name.split(".").pop() || "jpg";
     const path = `restaurants/${restaurantId}/logo.${ext}`;

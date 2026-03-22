@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireOwner } from "@/lib/auth";
 
 export async function DELETE(request: Request) {
   try {
@@ -13,10 +14,13 @@ export async function DELETE(request: Request) {
       );
     }
 
+    const { auth, error: authError } = await requireOwner();
+    if (authError) return authError;
+
     // Check staff exists and is not owner
     const { data: staff, error: fetchError } = await supabaseAdmin
       .from("staff")
-      .select("id, role")
+      .select("id, role, restaurant_id")
       .eq("id", id)
       .single();
 
@@ -32,6 +36,10 @@ export async function DELETE(request: Request) {
         { error: "No se puede eliminar al gerente." },
         { status: 403 }
       );
+    }
+
+    if (staff.restaurant_id !== auth.restaurantId) {
+      return NextResponse.json({ error: "No tienes acceso a este miembro." }, { status: 403 });
     }
 
     const { error: deleteError } = await supabaseAdmin

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireAuth } from "@/lib/auth";
 
 export async function PUT(request: Request) {
   try {
@@ -11,6 +12,19 @@ export async function PUT(request: Request) {
         { error: "El ID del miembro es obligatorio." },
         { status: 400 }
       );
+    }
+
+    const { auth, error: authError } = await requireAuth();
+    if (authError) return authError;
+
+    // Verify staff belongs to same restaurant
+    const { data: targetStaff } = await supabaseAdmin
+      .from("staff")
+      .select("restaurant_id")
+      .eq("id", id)
+      .single();
+    if (!targetStaff || targetStaff.restaurant_id !== auth.restaurantId) {
+      return NextResponse.json({ error: "No tienes acceso a este miembro." }, { status: 403 });
     }
 
     // Build update object with only provided fields

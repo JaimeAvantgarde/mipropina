@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireOwner } from "@/lib/auth";
 
 export async function PUT(request: Request) {
   try {
@@ -12,6 +13,9 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+
+    const { auth, error: authError } = await requireOwner(id);
+    if (authError) return authError;
 
     // Build update object with only provided fields
     const updates: Record<string, string> = {};
