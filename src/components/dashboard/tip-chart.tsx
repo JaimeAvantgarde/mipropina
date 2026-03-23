@@ -44,10 +44,11 @@ function TipChart({ tips }: TipChartProps) {
     return days;
   }, [tips, daysCount]);
 
-  const maxCents = Math.max(...chartData.map((d) => d.cents), 100);
+  const maxCents = Math.max(...chartData.map((d) => d.cents), 50);
   const totalCents = chartData.reduce((sum, d) => sum + d.cents, 0);
   const totalCount = chartData.reduce((sum, d) => sum + d.count, 0);
   const bestDay = chartData.reduce((best, d) => d.cents > best.cents ? d : best, chartData[0]);
+  const hasAnyData = totalCount > 0;
 
   // Show every Nth label depending on range
   const labelInterval = range === "7d" ? 1 : range === "14d" ? 2 : 5;
@@ -90,35 +91,42 @@ function TipChart({ tips }: TipChartProps) {
 
       {/* Chart */}
       <div className="px-6 pb-2">
-        <div className="flex items-end gap-[3px] h-36">
-          {chartData.map((day, i) => {
-            const height = maxCents > 0 ? Math.max((day.cents / maxCents) * 100, day.cents > 0 ? 6 : 1.5) : 1.5;
-            const isToday = i === chartData.length - 1;
-            return (
-              <div key={i} className="flex-1 flex flex-col items-center group relative">
-                {/* Tooltip */}
-                {day.cents > 0 && (
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#0D1B1E] text-white text-[10px] font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
-                    <span className="font-bold">{(day.cents / 100).toFixed(2).replace(".", ",")} &euro;</span>
-                    <span className="text-white/60 ml-1">{day.count} propina{day.count !== 1 ? "s" : ""}</span>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0D1B1E] rotate-45" />
-                  </div>
-                )}
-                {/* Bar */}
-                <div
-                  className={`w-full rounded-t-[4px] transition-all duration-300 ${
-                    day.cents > 0
-                      ? isToday
-                        ? "bg-[#0D1B1E] group-hover:bg-[#1a2e32]"
-                        : "bg-[#2ECC87] group-hover:bg-[#27B576]"
-                      : "bg-gray-100"
-                  }`}
-                  style={{ height: `${height}%` }}
-                />
-              </div>
-            );
-          })}
-        </div>
+        {hasAnyData ? (
+          <div className="flex items-end gap-[3px] h-40">
+            {chartData.map((day, i) => {
+              const height = maxCents > 0 ? Math.max((day.cents / maxCents) * 100, day.cents > 0 ? 10 : 2) : 2;
+              const isToday = i === chartData.length - 1;
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center group relative">
+                  {/* Tooltip */}
+                  {day.cents > 0 && (
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#0D1B1E] text-white text-[10px] font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
+                      <span className="font-bold">{(day.cents / 100).toFixed(2).replace(".", ",")} &euro;</span>
+                      <span className="text-white/60 ml-1">{day.count} propina{day.count !== 1 ? "s" : ""}</span>
+                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0D1B1E] rotate-45" />
+                    </div>
+                  )}
+                  {/* Bar */}
+                  <div
+                    className={`w-full rounded-t-[4px] transition-all duration-300 ${
+                      day.cents > 0
+                        ? isToday
+                          ? "bg-[#0D1B1E] group-hover:bg-[#1a2e32]"
+                          : "bg-[#2ECC87] group-hover:bg-[#27B576]"
+                        : "bg-gray-100"
+                    }`}
+                    style={{ height: `${height}%` }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="h-40 flex flex-col items-center justify-center text-center">
+            <div className="text-3xl opacity-30 mb-2">📊</div>
+            <p className="text-sm text-gray-400">Las propinas que recibas apareceran aqui</p>
+          </div>
+        )}
 
         {/* X-axis labels */}
         <div className="flex gap-[3px] mt-1.5 border-t border-gray-100 pt-2 pb-3">
