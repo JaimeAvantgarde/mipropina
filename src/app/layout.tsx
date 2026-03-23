@@ -60,7 +60,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${dmSerif.variable} ${jakarta.variable}`}>
-      <body className="antialiased">{children}</body>
+      <head>
+        <meta name="theme-color" content="#2ECC87" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
+      <body className="antialiased">
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(function() {});
+              }
+            `,
+          }}
+        />
+      </body>
     </html>
   );
 }

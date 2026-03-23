@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { DashboardContext } from "@/lib/dashboard-context";
 import { CreateRestaurant } from "@/components/dashboard/create-restaurant";
+import { PushPrompt } from "@/components/dashboard/push-prompt";
 import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardLayout({
@@ -103,7 +104,10 @@ export default function DashboardLayout({
 
         {/* Main content */}
         <main className="lg:ml-64 min-h-screen pt-16 lg:pt-0">
-          <div className="p-6 lg:p-8 max-w-6xl">{children}</div>
+          <div className="p-6 lg:p-8 max-w-6xl">
+            <PushPrompt />
+            {children}
+          </div>
         </main>
       </div>
     </DashboardContext.Provider>

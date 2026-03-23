@@ -115,34 +115,53 @@ function StripePaymentForm({
   slug: string;
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const createIntent = useCallback(async () => {
-    setLoading(true);
+  const initOrUpdateIntent = useCallback(async () => {
+    if (!paymentIntentId) setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/stripe/create-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurant_id: restaurantId, amount_cents: amountCents }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "No se pudo crear el pago.");
+      // If we already have a PaymentIntent, update its amount instead of creating a new one
+      if (paymentIntentId) {
+        const res = await fetch("/api/stripe/update-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment_intent_id: paymentIntentId, amount_cents: amountCents }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "No se pudo actualizar el pago.");
+        }
+        const data = await res.json();
+        setClientSecret(data.clientSecret);
+      } else {
+        const res = await fetch("/api/stripe/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restaurant_id: restaurantId, amount_cents: amountCents }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "No se pudo crear el pago.");
+        }
+        const data = await res.json();
+        setClientSecret(data.clientSecret);
+        // Extract PaymentIntent ID from clientSecret (format: pi_xxx_secret_yyy)
+        const piId = data.clientSecret?.split("_secret_")[0];
+        if (piId) setPaymentIntentId(piId);
       }
-      const data = await res.json();
-      setClientSecret(data.clientSecret);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al conectar con Stripe.");
     } finally {
       setLoading(false);
     }
-  }, [restaurantId, amountCents]);
+  }, [restaurantId, amountCents, paymentIntentId]);
 
   useEffect(() => {
-    createIntent();
-  }, [createIntent]);
+    initOrUpdateIntent();
+  }, [amountCents]);
 
   if (loading) {
     return (
@@ -157,7 +176,7 @@ function StripePaymentForm({
     return (
       <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-4 text-center">
         <p className="text-sm text-red-700">{error}</p>
-        <button onClick={createIntent} className="mt-3 text-sm font-semibold text-[#2ECC87] underline cursor-pointer">
+        <button onClick={initOrUpdateIntent} className="mt-3 text-sm font-semibold text-[#2ECC87] underline cursor-pointer">
           Reintentar
         </button>
       </div>

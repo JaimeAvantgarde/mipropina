@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sendPushToRestaurant } from "@/lib/push";
+import { formatCentsShort } from "@/lib/utils";
 import type Stripe from "stripe";
 
 export async function POST(request: Request) {
@@ -43,6 +45,17 @@ export async function POST(request: Request) {
           .from("tip")
           .update({ status: "completed" })
           .eq("stripe_payment_id", paymentIntent.id);
+
+        // Send push notification to restaurant staff
+        if (restaurantId) {
+          const tipCents = Number(paymentIntent.metadata?.tip_amount_cents) || paymentIntent.amount;
+          sendPushToRestaurant(restaurantId, {
+            title: "Nueva propina",
+            body: `Has recibido una propina de ${formatCentsShort(tipCents)}`,
+            url: "/dashboard",
+            tag: `tip-${paymentIntent.id}`,
+          }).catch((err) => console.error("[webhook] Push error:", err));
+        }
         break;
       }
 
