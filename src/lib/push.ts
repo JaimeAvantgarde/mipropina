@@ -1,19 +1,24 @@
 import webpush from "web-push";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
+let vapidConfigured = false;
 
-webpush.setVapidDetails(
-  "mailto:contacto@mipropina.es",
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
+function ensureVapid() {
+  if (vapidConfigured) return;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) return;
+  webpush.setVapidDetails("mailto:contacto@mipropina.es", publicKey, privateKey);
+  vapidConfigured = true;
+}
 
 export async function sendPushToRestaurant(
   restaurantId: string,
   payload: { title: string; body: string; url?: string; tag?: string }
 ) {
+  ensureVapid();
+  if (!vapidConfigured) return;
+
   const { data: subscriptions } = await supabaseAdmin
     .from("push_subscription")
     .select("endpoint, p256dh, auth")
