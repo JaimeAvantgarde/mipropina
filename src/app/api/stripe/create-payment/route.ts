@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { supabaseAdmin } from "@/lib/supabase/admin";
-import { CLIENT_FEE_CENTS, calculatePlatformFee } from "@/lib/utils";
+import { CLIENT_FEE_CENTS } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -45,15 +44,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Record pending tip in Supabase (tip amount + platform fee for distribution)
-    await supabaseAdmin.from("tip").insert({
-      restaurant_id,
-      amount_cents,
-      platform_fee_cents: calculatePlatformFee(amount_cents),
-      stripe_payment_id: paymentIntent.id,
-      status: "pending",
-    });
-
+    // Tip record is created in the webhook when payment succeeds
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
     });

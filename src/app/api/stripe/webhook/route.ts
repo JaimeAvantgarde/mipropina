@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { sendPushToRestaurant } from "@/lib/push";
-import { formatCentsShort } from "@/lib/utils";
+import { formatCentsShort, calculatePlatformFee } from "@/lib/utils";
 import type Stripe from "stripe";
 
 export async function POST(request: Request) {
@@ -41,10 +41,15 @@ export async function POST(request: Request) {
         console.log(
           `[webhook] Payment succeeded: ${paymentIntent.id} | Restaurant: ${restaurantId} | Amount: ${paymentIntent.amount}`
         );
-        await supabaseAdmin
-          .from("tip")
-          .update({ status: "completed" })
-          .eq("stripe_payment_id", paymentIntent.id);
+        // Create tip record only when payment actually succeeds
+        const tipCentsRaw = Number(paymentIntent.metadata?.tip_amount_cents) || paymentIntent.amount;
+        await supabaseAdmin.from("tip").insert({
+          restaurant_id: restaurantId,
+          amount_cents: tipCentsRaw,
+          platform_fee_cents: calculatePlatformFee(tipCentsRaw),
+          stripe_payment_id: paymentIntent.id,
+          status: "completed",
+        });
 
         // Send push notification to restaurant staff
         if (restaurantId) {
@@ -64,10 +69,6 @@ export async function POST(request: Request) {
         console.error(
           `[webhook] Payment failed: ${paymentIntent.id} | Reason: ${paymentIntent.last_payment_error?.message}`
         );
-        await supabaseAdmin
-          .from("tip")
-          .update({ status: "failed" })
-          .eq("stripe_payment_id", paymentIntent.id);
         break;
       }
 
