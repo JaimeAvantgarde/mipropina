@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
+import { sendPushToRestaurant } from "@/lib/push";
+import { formatCentsShort } from "@/lib/utils";
 
 export async function POST(request: Request) {
   try {
@@ -15,6 +17,23 @@ export async function POST(request: Request) {
 
     const { auth, error: authError } = await requireOwner(restaurant_id);
     if (authError) return authError;
+
+    // Check available balance before attempting transfers
+    const balance = await getStripe().balance.retrieve();
+    const availableCents = balance.available
+      .filter((b) => b.currency === "eur")
+      .reduce((sum, b) => sum + b.amount, 0);
+
+    const totalCentsRequested = payouts.reduce((sum: number, p: any) => sum + p.amount_cents, 0);
+    if (availableCents < totalCentsRequested) {
+      return NextResponse.json(
+        {
+          error: `Balance insuficiente. Disponible: ${(availableCents / 100).toFixed(2)}€. El dinero de las propinas tarda ~2 días laborables en estar disponible para repartir.`,
+          available_cents: availableCents,
+        },
+        { status: 400 }
+      );
+    }
 
     // Fetch staff records to get stripe_payout_id
     const staffIds = payouts.map((p: any) => p.staff_id);
@@ -95,6 +114,14 @@ export async function POST(request: Request) {
         });
 
         results.push({ staff_id: payout.staff_id, status: "failed", error: message });
+
+        // Notify owner about failed transfer
+        sendPushToRestaurant(restaurant_id, {
+          title: "Transferencia fallida",
+          body: `La transferencia a ${staff?.name || "un camarero"} de ${formatCentsShort(payout.amount_cents)} ha fallado`,
+          url: "/dashboard/repartos",
+          tag: `transfer-fail-${payout.staff_id}`,
+        }).catch(() => {});
       }
     }
 

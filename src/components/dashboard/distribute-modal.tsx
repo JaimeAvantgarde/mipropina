@@ -27,6 +27,23 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
   const [confirmed, setConfirmed] = useState(false);
   const [distributing, setDistributing] = useState(false);
   const [error, setError] = useState("");
+  const [balanceAvailable, setBalanceAvailable] = useState<number | null>(null);
+  const [balancePending, setBalancePending] = useState<number>(0);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+
+  // Fetch balance when modal opens
+  useEffect(() => {
+    if (!open) return;
+    setLoadingBalance(true);
+    fetch("/api/stripe/balance")
+      .then((r) => r.json())
+      .then((data) => {
+        setBalanceAvailable(data.available_cents ?? 0);
+        setBalancePending(data.pending_cents ?? 0);
+      })
+      .catch(() => setBalanceAvailable(null))
+      .finally(() => setLoadingBalance(false));
+  }, [open]);
 
   const selectedStaff = useMemo(
     () => activeStaff.filter((s) => selectedIds.has(s.id)),
@@ -112,30 +129,52 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
     setPercentages((prev) => ({ ...prev, [staffId]: pct }));
   };
 
+  const hasStripeBalance = balanceAvailable !== null && balanceAvailable >= totalCents;
+  const hasAnyStripeStaff = selectedStaff.some((s) => s.stripe_payout_id);
+  const useStripeTransfers = hasStripeBalance && hasAnyStripeStaff;
+
   const handleConfirm = async () => {
     setDistributing(true);
     setError("");
 
     try {
-      const payouts = selectedStaff.map((s) => ({
+      const payoutsList = selectedStaff.map((s) => ({
         staff_id: s.id,
         amount_cents: amounts[s.id] || 0,
       }));
 
-      const res = await fetch("/api/stripe/create-payout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurant_id: restaurantId || "demo",
-          method,
-          payouts,
-        }),
-      });
+      if (useStripeTransfers) {
+        // Stripe transfers
+        const res = await fetch("/api/stripe/create-payout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            restaurant_id: restaurantId || "demo",
+            method,
+            payouts: payoutsList,
+          }),
+        });
 
-      const json = await res.json();
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json.error || "Error al crear el reparto");
+        }
+      } else {
+        // Manual distribution (no Stripe transfers, just record)
+        const res = await fetch("/api/distribution/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            restaurant_id: restaurantId || "demo",
+            method,
+            payouts: payoutsList,
+          }),
+        });
 
-      if (!res.ok) {
-        throw new Error(json.error || "Error al crear el reparto");
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json.error || "Error al crear el reparto");
+        }
       }
 
       setConfirmed(true);
@@ -171,6 +210,30 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
               {formatCents(totalCents)}
             </p>
           </div>
+
+          {/* Balance info */}
+          {!loadingBalance && balanceAvailable !== null && (
+            <div className={`rounded-xl px-4 py-3 text-sm ${
+              balanceAvailable >= totalCents
+                ? "bg-[#F5FAF7] border border-[#2ECC87]/20 text-[#1A3C34]/70"
+                : "bg-amber-50 border border-amber-200 text-amber-800"
+            }`}>
+              {balanceAvailable >= totalCents ? (
+                <p>Balance disponible: <span className="font-bold">{formatCents(balanceAvailable)}</span></p>
+              ) : (
+                <>
+                  <p className="font-semibold">Balance insuficiente para transferir por Stripe</p>
+                  <p className="text-xs mt-1">
+                    Disponible: {formatCents(balanceAvailable)}
+                    {balancePending > 0 && ` · Pendiente: ${formatCents(balancePending)} (~2 días laborables)`}
+                  </p>
+                  <p className="text-xs mt-1">
+                    Puedes registrar el reparto igualmente para pago manual (Bizum/efectivo).
+                  </p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Method tabs */}
           <div className="flex bg-gray-100 rounded-xl p-1">
@@ -339,7 +402,9 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
             size="lg"
           >
             {selectedCount > 0
-              ? `Confirmar reparto a ${selectedCount} persona${selectedCount === 1 ? "" : "s"}`
+              ? useStripeTransfers
+                ? `Transferir a ${selectedCount} persona${selectedCount === 1 ? "" : "s"}`
+                : `Registrar reparto manual a ${selectedCount} persona${selectedCount === 1 ? "" : "s"}`
               : "Selecciona al menos una persona"}
           </Button>
         </div>
