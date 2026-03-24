@@ -10,7 +10,7 @@ interface TipChartProps {
 type Range = "7d" | "14d" | "30d";
 
 function TipChart({ tips }: TipChartProps) {
-  const [range, setRange] = useState<Range>("14d");
+  const [range, setRange] = useState<Range>("7d");
   const daysCount = range === "7d" ? 7 : range === "14d" ? 14 : 30;
 
   const chartData = useMemo(() => {
@@ -20,7 +20,7 @@ function TipChart({ tips }: TipChartProps) {
     for (let i = daysCount - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split("T")[0];
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const dayOfWeek = d.toLocaleDateString("es-ES", { weekday: "short" });
       days.push({
         label: d.toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
@@ -33,7 +33,9 @@ function TipChart({ tips }: TipChartProps) {
 
     const completedTips = tips.filter((t) => t.status === "completed");
     for (const tip of completedTips) {
-      const tipDate = new Date(tip.created_at).toISOString().split("T")[0];
+      // Use local date to match the chart days
+      const tipD = new Date(tip.created_at);
+      const tipDate = `${tipD.getFullYear()}-${String(tipD.getMonth() + 1).padStart(2, "0")}-${String(tipD.getDate()).padStart(2, "0")}`;
       const day = days.find((d) => d.date === tipDate);
       if (day) {
         day.cents += tip.amount_cents - (tip.platform_fee_cents || 0);
@@ -44,13 +46,12 @@ function TipChart({ tips }: TipChartProps) {
     return days;
   }, [tips, daysCount]);
 
-  const maxCents = Math.max(...chartData.map((d) => d.cents), 50);
+  const maxCents = Math.max(...chartData.map((d) => d.cents), 1);
   const totalCents = chartData.reduce((sum, d) => sum + d.cents, 0);
   const totalCount = chartData.reduce((sum, d) => sum + d.count, 0);
   const bestDay = chartData.reduce((best, d) => d.cents > best.cents ? d : best, chartData[0]);
   const hasAnyData = totalCount > 0;
 
-  // Show every Nth label depending on range
   const labelInterval = range === "7d" ? 1 : range === "14d" ? 2 : 5;
 
   return (
@@ -92,48 +93,56 @@ function TipChart({ tips }: TipChartProps) {
       {/* Chart */}
       <div className="px-6 pb-2">
         {hasAnyData ? (
-          <div className="flex items-end gap-[3px] h-40">
+          <div className="flex items-end gap-1 h-44">
             {chartData.map((day, i) => {
-              const height = maxCents > 0 ? Math.max((day.cents / maxCents) * 100, day.cents > 0 ? 10 : 2) : 2;
               const isToday = i === chartData.length - 1;
+              const hasData = day.cents > 0;
+              // Minimum visible height for days with data
+              const heightPct = hasData ? Math.max((day.cents / maxCents) * 100, 15) : 0;
               return (
-                <div key={i} className="flex-1 flex flex-col items-center group relative">
+                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
                   {/* Tooltip */}
-                  {day.cents > 0 && (
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-[#0D1B1E] text-white text-[10px] font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
+                  {hasData && (
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#0D1B1E] text-white text-[10px] font-medium px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10 shadow-lg">
                       <span className="font-bold">{(day.cents / 100).toFixed(2).replace(".", ",")} &euro;</span>
                       <span className="text-white/60 ml-1">{day.count} propina{day.count !== 1 ? "s" : ""}</span>
                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#0D1B1E] rotate-45" />
                     </div>
                   )}
                   {/* Bar */}
-                  <div
-                    className={`w-full rounded-t-[4px] transition-all duration-300 ${
-                      day.cents > 0
-                        ? isToday
+                  {hasData ? (
+                    <div
+                      className={`w-full rounded-t-md transition-all duration-300 ${
+                        isToday
                           ? "bg-[#0D1B1E] group-hover:bg-[#1a2e32]"
                           : "bg-[#2ECC87] group-hover:bg-[#27B576]"
-                        : "bg-gray-100"
-                    }`}
-                    style={{ height: `${height}%` }}
-                  />
+                      }`}
+                      style={{ height: `${heightPct}%` }}
+                    />
+                  ) : (
+                    <div className="w-full rounded-t-md bg-gray-100/80 h-1" />
+                  )}
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="h-40 flex flex-col items-center justify-center text-center">
-            <div className="text-3xl opacity-30 mb-2">📊</div>
-            <p className="text-sm text-gray-400">Las propinas que recibas apareceran aqui</p>
+          <div className="h-44 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-full bg-[#2ECC87]/10 flex items-center justify-center mb-3">
+              <svg className="w-6 h-6 text-[#2ECC87]/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+              </svg>
+            </div>
+            <p className="text-sm text-gray-400">Las propinas apareceran aqui</p>
           </div>
         )}
 
         {/* X-axis labels */}
-        <div className="flex gap-[3px] mt-1.5 border-t border-gray-100 pt-2 pb-3">
+        <div className="flex gap-1 mt-2 border-t border-gray-100 pt-2 pb-3">
           {chartData.map((day, i) => (
             <div key={i} className="flex-1 text-center">
               {i % labelInterval === 0 && (
-                <span className="text-[9px] text-gray-400 leading-none">
+                <span className="text-[10px] text-gray-400 leading-none">
                   {range === "7d" ? day.shortLabel : day.label}
                 </span>
               )}
