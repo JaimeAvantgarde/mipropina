@@ -181,7 +181,8 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
       setTimeout(() => {
         setConfirmed(false);
         onClose();
-      }, 1500);
+        window.location.reload();
+      }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al procesar el reparto");
     } finally {
@@ -193,12 +194,14 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
     <Modal open={open} onClose={onClose} title="Repartir propinas">
       {confirmed ? (
         <div className="py-8 text-center">
-          <div className="text-5xl mb-4">✅</div>
+          <div className="text-5xl mb-4">{useStripeTransfers ? "✅" : "📋"}</div>
           <p className="text-lg font-bold text-[#0D1B1E]">
-            Reparto confirmado
+            {useStripeTransfers ? "Transferencia enviada" : "Reparto registrado"}
           </p>
           <p className="text-sm text-gray-400 mt-1">
-            Las transferencias se procesarán en breve
+            {useStripeTransfers
+              ? "El dinero llegará a la cuenta del camarero en ~2 días laborables"
+              : "Paga a tu equipo por Bizum o efectivo. El dinero de Stripe estará disponible en ~2 días laborables."}
           </p>
         </div>
       ) : (
