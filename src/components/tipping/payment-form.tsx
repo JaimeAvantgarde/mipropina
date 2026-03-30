@@ -116,7 +116,9 @@ function StripePaymentForm({
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [syncedAmount, setSyncedAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const paymentIntentRef = React.useRef<string | null>(null);
@@ -132,6 +134,9 @@ function StripePaymentForm({
       if (!paymentIntentRef.current) {
         setLoading(true);
         creatingRef.current = true;
+      } else {
+        // Show updating state while PI is being updated (hide Elements)
+        setUpdating(true);
       }
       setError(null);
 
@@ -148,7 +153,10 @@ function StripePaymentForm({
             throw new Error(data.error || "No se pudo actualizar el pago.");
           }
           const data = await res.json();
-          if (!cancelled) setClientSecret(data.clientSecret);
+          if (!cancelled) {
+            setClientSecret(data.clientSecret);
+            setSyncedAmount(amountCents);
+          }
         } else {
           // Create new PaymentIntent
           const res = await fetch("/api/stripe/create-payment", {
@@ -163,6 +171,7 @@ function StripePaymentForm({
           const data = await res.json();
           if (!cancelled) {
             setClientSecret(data.clientSecret);
+            setSyncedAmount(amountCents);
             const piId = data.clientSecret?.split("_secret_")[0];
             if (piId) {
               setPaymentIntentId(piId);
@@ -174,7 +183,10 @@ function StripePaymentForm({
         if (!cancelled) setError(err instanceof Error ? err.message : "Error al conectar con Stripe.");
       } finally {
         creatingRef.current = false;
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setUpdating(false);
+        }
       }
     }
 
@@ -195,18 +207,26 @@ function StripePaymentForm({
     return (
       <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-4 text-center">
         <p className="text-sm text-red-700">{error}</p>
-        <button onClick={() => { setError(null); setPaymentIntentId(null); paymentIntentRef.current = null; }} className="mt-3 text-sm font-semibold text-[#2ECC87] underline cursor-pointer">
+        <button onClick={() => { setError(null); setPaymentIntentId(null); paymentIntentRef.current = null; setSyncedAmount(null); }} className="mt-3 text-sm font-semibold text-[#2ECC87] underline cursor-pointer">
           Reintentar
         </button>
       </div>
     );
   }
 
-  if (!clientSecret || !stripePromise) return null;
+  // Don't render Elements until PI is synced with current amount
+  if (!clientSecret || !stripePromise || updating || syncedAmount !== amountCents) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8">
+        <div className="h-8 w-8 rounded-full border-[3px] border-[#2ECC87] border-t-transparent animate-spin" />
+        <p className="text-sm text-[#1A3C34]/60">Actualizando importe...</p>
+      </div>
+    );
+  }
 
   return (
     <Elements
-      key={`${clientSecret}-${amountCents}`}
+      key={`${clientSecret}-${syncedAmount}`}
       stripe={stripePromise}
       options={{
         clientSecret,
