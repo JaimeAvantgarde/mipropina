@@ -44,7 +44,11 @@ function CheckoutForm({ amountCents, slug }: { amountCents: number; slug: string
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <PaymentElement options={{ layout: "tabs" }} />
+      <PaymentElement options={{
+        layout: "tabs",
+        wallets: { applePay: "auto", googlePay: "auto" },
+        paymentMethodOrder: ["apple_pay", "google_pay", "card"],
+      }} />
 
       {/* Desglose propina + comisión */}
       <div className="rounded-xl bg-[#F5FAF7] border border-[#2ECC87]/20 px-4 py-3 space-y-1">
