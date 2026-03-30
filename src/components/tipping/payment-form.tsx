@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -115,86 +115,45 @@ function StripePaymentForm({
   slug: string;
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
-  const [syncedAmount, setSyncedAmount] = useState<number | null>(null);
+  const [readyAmount, setReadyAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const paymentIntentRef = React.useRef<string | null>(null);
-  const creatingRef = React.useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
 
-    async function initOrUpdateIntent() {
-      // Prevent concurrent PI creation
-      if (!paymentIntentRef.current && creatingRef.current) return;
-
-      if (!paymentIntentRef.current) {
-        setLoading(true);
-        creatingRef.current = true;
-      } else {
-        // Show updating state while PI is being updated (hide Elements)
-        setUpdating(true);
-      }
-      setError(null);
-
+    // Always create a fresh PaymentIntent for each amount
+    // Old PIs auto-expire after 24h — no cleanup needed
+    async function createIntent() {
       try {
-        if (paymentIntentRef.current) {
-          // Update existing PaymentIntent
-          const res = await fetch("/api/stripe/update-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ payment_intent_id: paymentIntentRef.current, amount_cents: amountCents }),
-          });
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || "No se pudo actualizar el pago.");
-          }
-          const data = await res.json();
-          if (!cancelled) {
-            setClientSecret(data.clientSecret);
-            setSyncedAmount(amountCents);
-          }
-        } else {
-          // Create new PaymentIntent
-          const res = await fetch("/api/stripe/create-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ restaurant_id: restaurantId, amount_cents: amountCents }),
-          });
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || "No se pudo crear el pago.");
-          }
-          const data = await res.json();
-          if (!cancelled) {
-            setClientSecret(data.clientSecret);
-            setSyncedAmount(amountCents);
-            const piId = data.clientSecret?.split("_secret_")[0];
-            if (piId) {
-              setPaymentIntentId(piId);
-              paymentIntentRef.current = piId;
-            }
-          }
+        const res = await fetch("/api/stripe/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ restaurant_id: restaurantId, amount_cents: amountCents }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "No se pudo crear el pago.");
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setClientSecret(data.clientSecret);
+          setReadyAmount(amountCents);
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Error al conectar con Stripe.");
       } finally {
-        creatingRef.current = false;
-        if (!cancelled) {
-          setLoading(false);
-          setUpdating(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
-    initOrUpdateIntent();
+    createIntent();
     return () => { cancelled = true; };
   }, [restaurantId, amountCents]);
 
-  if (loading) {
+  if (loading || readyAmount !== amountCents) {
     return (
       <div className="flex flex-col items-center gap-3 py-8">
         <div className="h-8 w-8 rounded-full border-[3px] border-[#2ECC87] border-t-transparent animate-spin" />
@@ -207,26 +166,18 @@ function StripePaymentForm({
     return (
       <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-4 text-center">
         <p className="text-sm text-red-700">{error}</p>
-        <button onClick={() => { setError(null); setPaymentIntentId(null); paymentIntentRef.current = null; setSyncedAmount(null); }} className="mt-3 text-sm font-semibold text-[#2ECC87] underline cursor-pointer">
+        <button onClick={() => { setError(null); setReadyAmount(null); }} className="mt-3 text-sm font-semibold text-[#2ECC87] underline cursor-pointer">
           Reintentar
         </button>
       </div>
     );
   }
 
-  // Don't render Elements until PI is synced with current amount
-  if (!clientSecret || !stripePromise || updating || syncedAmount !== amountCents) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-8">
-        <div className="h-8 w-8 rounded-full border-[3px] border-[#2ECC87] border-t-transparent animate-spin" />
-        <p className="text-sm text-[#1A3C34]/60">Actualizando importe...</p>
-      </div>
-    );
-  }
+  if (!clientSecret || !stripePromise) return null;
 
   return (
     <Elements
-      key={`${clientSecret}-${syncedAmount}`}
+      key={clientSecret}
       stripe={stripePromise}
       options={{
         clientSecret,
