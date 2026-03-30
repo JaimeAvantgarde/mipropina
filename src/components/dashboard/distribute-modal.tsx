@@ -130,51 +130,34 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
   };
 
   const hasStripeBalance = balanceAvailable !== null && balanceAvailable >= totalCents;
-  const hasAnyStripeStaff = selectedStaff.some((s) => s.stripe_payout_id);
-  const useStripeTransfers = hasStripeBalance && hasAnyStripeStaff;
+  const stripeStaff = selectedStaff.filter((s) => s.stripe_payout_id);
+  const nonStripeStaff = selectedStaff.filter((s) => !s.stripe_payout_id);
+  const canDistribute = hasStripeBalance && stripeStaff.length > 0;
 
   const handleConfirm = async () => {
     setDistributing(true);
     setError("");
 
     try {
-      const payoutsList = selectedStaff.map((s) => ({
+      // Only send payouts for staff with Stripe accounts
+      const payoutsList = stripeStaff.map((s) => ({
         staff_id: s.id,
         amount_cents: amounts[s.id] || 0,
       }));
 
-      if (useStripeTransfers) {
-        // Stripe transfers
-        const res = await fetch("/api/stripe/create-payout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            restaurant_id: restaurantId || "demo",
-            method,
-            payouts: payoutsList,
-          }),
-        });
+      const res = await fetch("/api/stripe/create-payout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurant_id: restaurantId || "demo",
+          method,
+          payouts: payoutsList,
+        }),
+      });
 
-        const json = await res.json();
-        if (!res.ok) {
-          throw new Error(json.error || "Error al crear el reparto");
-        }
-      } else {
-        // Manual distribution (no Stripe transfers, just record)
-        const res = await fetch("/api/distribution/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            restaurant_id: restaurantId || "demo",
-            method,
-            payouts: payoutsList,
-          }),
-        });
-
-        const json = await res.json();
-        if (!res.ok) {
-          throw new Error(json.error || "Error al crear el reparto");
-        }
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "Error al crear el reparto");
       }
 
       setConfirmed(true);
@@ -194,14 +177,12 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
     <Modal open={open} onClose={onClose} title="Repartir propinas">
       {confirmed ? (
         <div className="py-8 text-center">
-          <div className="text-5xl mb-4">{useStripeTransfers ? "✅" : "📋"}</div>
+          <div className="text-5xl mb-4">✅</div>
           <p className="text-lg font-bold text-[#0D1B1E]">
-            {useStripeTransfers ? "Transferencia enviada" : "Reparto registrado"}
+            Transferencia enviada
           </p>
           <p className="text-sm text-gray-400 mt-1">
-            {useStripeTransfers
-              ? "El dinero llegará a la cuenta del camarero en ~2 días laborables"
-              : "Paga a tu equipo por Bizum o efectivo. El dinero de Stripe estará disponible en ~2 días laborables."}
+            El dinero llegará a la cuenta del camarero en ~2 días laborables
           </p>
         </div>
       ) : (
@@ -371,13 +352,20 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
             </div>
           )}
 
-          {/* Info note */}
-          {selectedCount > 0 && (
+          {/* Info/warning notes */}
+          {selectedCount > 0 && nonStripeStaff.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <p className="text-xs text-amber-800 font-semibold">
+                {stripeStaff.length === 0
+                  ? "Ningún miembro del equipo tiene Stripe Connect. Deben conectar su cuenta bancaria en Ajustes para poder recibir transferencias."
+                  : `${nonStripeStaff.map(s => s.name).join(", ")} no ${nonStripeStaff.length === 1 ? "tiene" : "tienen"} Stripe Connect y no ${nonStripeStaff.length === 1 ? "recibirá" : "recibirán"} transferencia. Solo se transferirá a quienes tengan cuenta conectada.`}
+              </p>
+            </div>
+          )}
+          {selectedCount > 0 && stripeStaff.length > 0 && (
             <div className="bg-[#F5FAF7] border border-[#2ECC87]/20 rounded-xl px-4 py-3 text-center">
               <p className="text-xs text-gray-600">
-                {selectedStaff.filter(s => s.stripe_payout_id).length > 0
-                  ? `${selectedStaff.filter(s => s.stripe_payout_id).length} con Stripe → transferencia automática. ${selectedStaff.filter(s => !s.stripe_payout_id).length > 0 ? `${selectedStaff.filter(s => !s.stripe_payout_id).length} sin Stripe → pago manual (Bizum/transferencia).` : ""}`
-                  : "Sin Stripe Connect activo. El reparto queda registrado para pago manual (Bizum/transferencia)."}
+                {stripeStaff.length} persona{stripeStaff.length !== 1 ? "s" : ""} con Stripe Connect — transferencia automática
               </p>
             </div>
           )}
@@ -399,16 +387,18 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
           {/* Confirm */}
           <Button
             onClick={handleConfirm}
-            disabled={!isValid || distributing}
+            disabled={!isValid || distributing || !canDistribute}
             loading={distributing}
             className="w-full"
             size="lg"
           >
-            {selectedCount > 0
-              ? useStripeTransfers
-                ? `Transferir a ${selectedCount} persona${selectedCount === 1 ? "" : "s"}`
-                : `Registrar reparto manual a ${selectedCount} persona${selectedCount === 1 ? "" : "s"}`
-              : "Selecciona al menos una persona"}
+            {selectedCount === 0
+              ? "Selecciona al menos una persona"
+              : !hasStripeBalance
+                ? "Balance insuficiente en Stripe"
+                : stripeStaff.length === 0
+                  ? "Sin cuentas Stripe Connect"
+                  : `Transferir a ${stripeStaff.length} persona${stripeStaff.length === 1 ? "" : "s"}`}
           </Button>
         </div>
       )}
