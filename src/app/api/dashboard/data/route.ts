@@ -47,11 +47,16 @@ export async function GET() {
     }
 
     // Fetch staff
-    const { data: staff } = await supabaseAdmin
+    const { data: rawStaff } = await supabaseAdmin
       .from("staff")
       .select("*")
       .eq("restaurant_id", restaurantId)
       .order("created_at", { ascending: true });
+
+    // Strip sensitive fields (IBAN, phone, stripe IDs) for non-owners
+    const staff = currentUserRole === "owner"
+      ? rawStaff
+      : (rawStaff || []).map(({ iban, phone, stripe_payout_id, ...safe }: any) => safe);
 
     // Fetch tips (last 50)
     const { data: tips } = await supabaseAdmin
@@ -70,13 +75,22 @@ export async function GET() {
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false });
 
+    // Fetch completed distributions to subtract from available balance
+    const { data: distributions } = await supabaseAdmin
+      .from("distribution")
+      .select("total_cents")
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "distributed");
+
     // Calculate stats
     const allTips = tips || [];
     const completedTips = allTips.filter((t: { status: string }) => t.status === "completed");
     const totalCents = completedTips.reduce((sum: number, t: { amount_cents: number }) => sum + t.amount_cents, 0);
     const totalFeeCents = completedTips.reduce((sum: number, t: { platform_fee_cents?: number }) => sum + (t.platform_fee_cents || 0), 0);
-    const netCents = totalCents - totalFeeCents;
-    const avgCents = completedTips.length > 0 ? Math.round(totalCents / completedTips.length) : 0;
+    const totalDistributed = (distributions || []).reduce((sum: number, d: { total_cents: number }) => sum + d.total_cents, 0);
+    const netCents = totalCents - totalFeeCents - totalDistributed;
+    const netCentsAllTime = totalCents - totalFeeCents;
+    const avgCents = completedTips.length > 0 ? Math.round(netCentsAllTime / completedTips.length) : 0;
 
     // Tips this week
     const weekStart = new Date();
@@ -98,6 +112,7 @@ export async function GET() {
         totalCents,
         totalFeeCents,
         netCents,
+        totalDistributed,
         tipsThisWeek: tipsThisWeek.length,
         activeStaff: activeStaff.length,
         avgCents,

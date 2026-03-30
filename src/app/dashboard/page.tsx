@@ -152,7 +152,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Media neta"
-          value={formatCents(stats.avgCents > 0 ? Math.round(stats.netCents / tips.filter(t => t.status === "completed").length) : 0)}
+          value={formatCents(stats.avgCents)}
           subtitle="Por propina"
           icon={<AvgIcon />}
           accent="#EC4899"

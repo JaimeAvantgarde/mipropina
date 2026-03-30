@@ -100,3 +100,48 @@ export async function requireOwner(restaurantId?: string): Promise<
 
   return result;
 }
+
+/**
+ * Requires the user to be the platform superadmin (SUPERADMIN_EMAIL env var).
+ */
+export async function requireSuperadmin(): Promise<
+  { email: string; error: null } | { email: null; error: NextResponse }
+> {
+  const superadminEmail = process.env.SUPERADMIN_EMAIL;
+  if (!superadminEmail) {
+    return {
+      email: null,
+      error: NextResponse.json(
+        { error: "Panel de administración no configurado." },
+        { status: 503 }
+      ),
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || user.email?.toLowerCase() !== superadminEmail.toLowerCase()) {
+      return {
+        email: null,
+        error: NextResponse.json(
+          { error: "Acceso denegado." },
+          { status: 403 }
+        ),
+      };
+    }
+
+    return { email: user.email, error: null };
+  } catch {
+    return {
+      email: null,
+      error: NextResponse.json(
+        { error: "Error de autenticación." },
+        { status: 401 }
+      ),
+    };
+  }
+}

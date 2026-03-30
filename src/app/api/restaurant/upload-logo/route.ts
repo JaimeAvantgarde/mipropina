@@ -15,10 +15,33 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Solo se permiten imágenes JPG, PNG o WebP." },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (max 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { error: "El archivo no puede superar 5 MB." },
+        { status: 400 }
+      );
+    }
+
     const { auth, error: authError } = await requireOwner(restaurantId);
     if (authError) return authError;
 
-    const ext = file.name.split(".").pop() || "jpg";
+    const extMap: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    };
+    const ext = extMap[file.type] || "jpg";
     const path = `restaurants/${restaurantId}/logo.${ext}`;
 
     // Upload using admin client (bypasses RLS)

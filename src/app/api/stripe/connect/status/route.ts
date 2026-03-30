@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { requireAuth } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   try {
@@ -17,6 +18,28 @@ export async function GET(request: Request) {
       );
     }
 
+    // Verify the account belongs to the user's restaurant or staff
+    const { data: restaurant } = await supabaseAdmin
+      .from("restaurant")
+      .select("id")
+      .eq("id", auth.restaurantId)
+      .eq("stripe_account_id", accountId)
+      .maybeSingle();
+
+    const { data: staffAccount } = await supabaseAdmin
+      .from("staff")
+      .select("id")
+      .eq("restaurant_id", auth.restaurantId)
+      .eq("stripe_payout_id", accountId)
+      .maybeSingle();
+
+    if (!restaurant && !staffAccount) {
+      return NextResponse.json(
+        { error: "No tienes acceso a esta cuenta." },
+        { status: 403 }
+      );
+    }
+
     const account = await getStripe().accounts.retrieve(accountId);
 
     return NextResponse.json({
@@ -29,7 +52,7 @@ export async function GET(request: Request) {
     const message = error instanceof Error ? error.message : "Error desconocido";
     console.error("[stripe/connect/status] Error:", message);
     return NextResponse.json(
-      { error: message },
+      { error: "Error al consultar el estado de la cuenta." },
       { status: 500 }
     );
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { CLIENT_FEE_CENTS } from "@/lib/utils";
 
 export async function POST(request: Request) {
@@ -11,6 +12,20 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "restaurant_id es obligatorio." },
         { status: 400 }
+      );
+    }
+
+    // Validate restaurant exists
+    const { data: restaurant } = await supabaseAdmin
+      .from("restaurant")
+      .select("id")
+      .eq("id", restaurant_id)
+      .maybeSingle();
+
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: "Restaurante no encontrado." },
+        { status: 404 }
       );
     }
 
@@ -52,7 +67,7 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "Error desconocido";
     console.error("[create-payment] Error:", message);
     return NextResponse.json(
-      { error: message },
+      { error: "Error al procesar el pago." },
       { status: 500 }
     );
   }

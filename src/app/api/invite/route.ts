@@ -3,13 +3,10 @@ import { getWhatsAppLink } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
 
+import { randomBytes } from "crypto";
+
 function generateToken(): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
+  return randomBytes(16).toString("hex");
 }
 
 export async function POST(request: Request) {

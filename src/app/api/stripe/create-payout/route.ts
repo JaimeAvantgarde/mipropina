@@ -18,18 +18,50 @@ export async function POST(request: Request) {
     const { auth, error: authError } = await requireOwner(restaurant_id);
     if (authError) return authError;
 
-    // Check available balance before attempting transfers
+    // Calculate restaurant's available balance from tips minus already distributed
+    const { data: completedTips } = await supabaseAdmin
+      .from("tip")
+      .select("amount_cents, platform_fee_cents")
+      .eq("restaurant_id", restaurant_id)
+      .eq("status", "completed");
+
+    const { data: existingDistributions } = await supabaseAdmin
+      .from("distribution")
+      .select("total_cents")
+      .eq("restaurant_id", restaurant_id)
+      .eq("status", "distributed");
+
+    const totalTipNet = (completedTips || []).reduce(
+      (sum: number, t: any) => sum + t.amount_cents - (t.platform_fee_cents || 0), 0
+    );
+    const totalDistributed = (existingDistributions || []).reduce(
+      (sum: number, d: any) => sum + d.total_cents, 0
+    );
+    const restaurantAvailable = totalTipNet - totalDistributed;
+
+    const totalCentsRequested = payouts.reduce((sum: number, p: any) => sum + p.amount_cents, 0);
+
+    if (totalCentsRequested > restaurantAvailable) {
+      return NextResponse.json(
+        {
+          error: `Excede el saldo del restaurante. Disponible para repartir: ${(restaurantAvailable / 100).toFixed(2)}€.`,
+          available_cents: restaurantAvailable,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Also check Stripe platform balance
     const balance = await getStripe().balance.retrieve();
-    const availableCents = balance.available
+    const stripAvailableCents = balance.available
       .filter((b) => b.currency === "eur")
       .reduce((sum, b) => sum + b.amount, 0);
 
-    const totalCentsRequested = payouts.reduce((sum: number, p: any) => sum + p.amount_cents, 0);
-    if (availableCents < totalCentsRequested) {
+    if (stripAvailableCents < totalCentsRequested) {
       return NextResponse.json(
         {
-          error: `Balance insuficiente. Disponible: ${(availableCents / 100).toFixed(2)}€. El dinero de las propinas tarda ~2 días laborables en estar disponible para repartir.`,
-          available_cents: availableCents,
+          error: `Balance insuficiente en Stripe. Disponible: ${(stripAvailableCents / 100).toFixed(2)}€. El dinero de las propinas tarda ~2 días laborables en estar disponible para repartir.`,
+          available_cents: stripAvailableCents,
         },
         { status: 400 }
       );
@@ -47,7 +79,6 @@ export async function POST(request: Request) {
     }
 
     // Create distribution record
-    const totalCents = payouts.reduce((sum: number, p: any) => sum + p.amount_cents, 0);
     const now = new Date();
     const weekStart = new Date(now);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
@@ -58,7 +89,7 @@ export async function POST(request: Request) {
         restaurant_id,
         week_start: weekStart.toISOString().split("T")[0],
         week_end: now.toISOString().split("T")[0],
-        total_cents: totalCents,
+        total_cents: totalCentsRequested,
         method: method || "custom",
         status: "pending",
       })
@@ -140,6 +171,6 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido";
     console.error("[create-payout] Error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Error al procesar el reparto." }, { status: 500 });
   }
 }
