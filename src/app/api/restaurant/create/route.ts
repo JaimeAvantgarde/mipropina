@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       .from("restaurant")
       .select("id")
       .eq("slug", slug.trim())
-      .single();
+      .maybeSingle();
 
     if (existingSlug) {
       return NextResponse.json(

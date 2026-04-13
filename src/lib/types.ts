@@ -25,7 +25,7 @@ export type Staff = {
   auth_user_id: string | null;
   name: string;
   email: string;
-  phone: string;
+  phone: string | null;
   avatar_emoji: string;
   role: StaffRole;
   iban: string | null;

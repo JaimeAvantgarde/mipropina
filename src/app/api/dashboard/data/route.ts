@@ -20,7 +20,8 @@ export async function GET() {
       .from("staff")
       .select("restaurant_id, role")
       .eq("auth_user_id", user.id)
-      .single();
+      .eq("active", true)
+      .maybeSingle();
 
     if (!staffRecord) {
       return NextResponse.json(
@@ -46,11 +47,12 @@ export async function GET() {
       );
     }
 
-    // Fetch staff
+    // Fetch active staff only
     const { data: rawStaff } = await supabaseAdmin
       .from("staff")
       .select("*")
       .eq("restaurant_id", restaurantId)
+      .eq("active", true)
       .order("created_at", { ascending: true });
 
     // Strip sensitive fields (IBAN, phone, stripe IDs) for non-owners
@@ -100,8 +102,6 @@ export async function GET() {
       (t: { created_at: string }) => new Date(t.created_at) >= weekStart
     );
 
-    const activeStaff = (staff || []).filter((s: { active: boolean }) => s.active);
-
     return NextResponse.json({
       restaurant,
       staff: staff || [],
@@ -114,7 +114,7 @@ export async function GET() {
         netCents,
         totalDistributed,
         tipsThisWeek: tipsThisWeek.length,
-        activeStaff: activeStaff.length,
+        activeStaff: (staff || []).length,
         avgCents,
       },
     });

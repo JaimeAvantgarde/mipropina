@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -27,11 +28,17 @@ function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurant
   const router = useRouter();
   const isOwner = staffRole === "owner";
   const navItems = allNavItems.filter((item) => !item.ownerOnly || isOwner);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
+    setLoggingOut(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/");
+    } catch {
+      setLoggingOut(false);
+    }
   }
 
   const isActive = (href: string) => {
@@ -113,10 +120,11 @@ function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurant
             </div>
           </div>
           <button
-            className="text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors cursor-pointer"
+            className="text-gray-500 hover:text-gray-300 text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
             onClick={handleLogout}
+            disabled={loggingOut}
           >
-            Cerrar sesión
+            {loggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
           </button>
         </div>
       </aside>

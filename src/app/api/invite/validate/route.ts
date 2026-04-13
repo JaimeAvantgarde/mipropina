@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       .eq("code", token)
       .eq("used", false)
       .gt("expires_at", new Date().toISOString())
-      .single();
+      .maybeSingle();
 
     if (error || !invite) {
       return NextResponse.json({ valid: false });
