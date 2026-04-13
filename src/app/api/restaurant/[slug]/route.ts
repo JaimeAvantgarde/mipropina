@@ -9,7 +9,7 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from("restaurant")
-    .select("id, name, slug, logo_emoji, logo_url, theme_color, tip_amounts, custom_amount_enabled, thank_you_message")
+    .select("id, name, slug, logo_emoji, logo_url, theme_color, tip_amounts, custom_amount_enabled, thank_you_message, google_maps_url")
     .eq("slug", slug)
     .maybeSingle();
 

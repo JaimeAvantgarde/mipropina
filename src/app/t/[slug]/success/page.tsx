@@ -8,6 +8,7 @@ type Restaurant = {
   name: string;
   theme_color: string;
   thank_you_message: string | null;
+  google_maps_url: string | null;
 };
 
 type PageProps = {
@@ -49,6 +50,7 @@ export default function SuccessPage({ params }: PageProps) {
 
   const brandColor = restaurant?.theme_color || "#2ECC87";
   const message = restaurant?.thank_you_message || DEFAULT_MESSAGE;
+  const googleMapsUrl = restaurant?.google_maps_url;
 
   return (
     <main
@@ -88,9 +90,47 @@ export default function SuccessPage({ params }: PageProps) {
           ¡Gracias por tu propina!
         </h1>
 
-        <p className="text-[#1A3C34]/70 text-base mb-10 leading-relaxed">
+        <p className="text-[#1A3C34]/70 text-base mb-8 leading-relaxed">
           {message}
         </p>
+
+        {/* Google Maps review CTA */}
+        {googleMapsUrl && (
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full mb-4 py-4 px-5 rounded-2xl bg-white border-2 border-gray-100 hover:border-[#FBBC04] transition-all duration-200 active:scale-[0.98] shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              {/* Google G logo */}
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-bold text-[#0D1B1E] leading-tight">
+                  ¿Te gustó la experiencia?
+                </p>
+                <p className="text-xs text-[#1A3C34]/60 mt-0.5">
+                  Déjanos una reseña en Google
+                </p>
+              </div>
+              {/* Stars */}
+              <div className="flex gap-0.5 flex-shrink-0">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="#FBBC04">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                ))}
+              </div>
+            </div>
+          </a>
+        )}
 
         {/* Back link */}
         <Link

@@ -66,6 +66,11 @@ export default function AjustesPage() {
   const [savingEmail, setSavingEmail] = useState(false);
   const [savedEmail, setSavedEmail] = useState(false);
 
+  // Google Maps
+  const [googleMapsUrl, setGoogleMapsUrl] = useState("");
+  const [savingMaps, setSavingMaps] = useState(false);
+  const [savedMaps, setSavedMaps] = useState(false);
+
   // Delete
   const [deleting, setDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState("");
@@ -87,6 +92,7 @@ export default function AjustesPage() {
       setThankYouMessage(r.thank_you_message || "");
       setEmailNotifications(r.email_notifications_enabled !== false);
       setNotificationEmail(r.notification_email || "");
+      setGoogleMapsUrl(r.google_maps_url || "");
 
       if (r.stripe_account_id) {
         fetch(`/api/stripe/connect/status?account_id=${r.stripe_account_id}`)
@@ -256,6 +262,25 @@ export default function AjustesPage() {
       setError(err instanceof Error ? err.message : "Error al guardar las notificaciones");
     } finally {
       setSavingEmail(false);
+    }
+  };
+
+  const handleSaveMaps = async () => {
+    if (!data?.restaurant) return;
+    setSavingMaps(true);
+    try {
+      const res = await saveRestaurant(data.restaurant.id, {
+        google_maps_url: googleMapsUrl.trim() || null,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setSavedMaps(true);
+      setTimeout(() => setSavedMaps(false), 2000);
+      refetch();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar la URL de Google Maps");
+    } finally {
+      setSavingMaps(false);
     }
   };
 
@@ -631,6 +656,27 @@ export default function AjustesPage() {
               </Button>
             </>
           )}
+        </Card>
+
+        {/* Google Maps review */}
+        <Card>
+          <h3 className="text-lg font-bold text-[#0D1B1E] mb-1">Reseña en Google</h3>
+          <p className="text-sm text-gray-500 mb-5">
+            Tras cada propina, se mostrará un botón para que el cliente te deje una reseña en Google.
+          </p>
+          <Input
+            label="URL de reseña de Google"
+            type="url"
+            placeholder="https://g.page/r/TuNegocio/review"
+            value={googleMapsUrl}
+            onChange={(e) => setGoogleMapsUrl(e.target.value)}
+          />
+          <p className="text-xs text-gray-400 mt-2 mb-4">
+            En Google Business Profile → Inicio → "Obtener más opiniones" → copia el enlace corto
+          </p>
+          <Button onClick={handleSaveMaps} loading={savingMaps}>
+            {savedMaps ? "Guardado ✓" : "Guardar enlace"}
+          </Button>
         </Card>
 
         {/* Danger zone */}

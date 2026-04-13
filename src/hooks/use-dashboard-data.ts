@@ -20,6 +20,7 @@ const mockRestaurant: Restaurant = {
   thank_you_message: null,
   email_notifications_enabled: true,
   notification_email: null,
+  google_maps_url: null,
   created_at: "2024-01-01",
 };
 

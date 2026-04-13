@@ -14,6 +14,7 @@ export type Restaurant = {
   thank_you_message: string | null;
   email_notifications_enabled: boolean;
   notification_email: string | null;
+  google_maps_url: string | null;
   created_at: string;
 };
 

@@ -83,6 +83,18 @@ export async function PUT(request: Request) {
       updates.notification_email = email;
     }
 
+    // Google Maps review URL
+    if (body.google_maps_url !== undefined) {
+      const url = body.google_maps_url?.trim() || null;
+      if (url && !/^https?:\/\/(maps\.google\.|g\.page|www\.google\.[a-z]+\/maps)/.test(url)) {
+        return NextResponse.json(
+          { error: "La URL de Google Maps no parece válida." },
+          { status: 400 }
+        );
+      }
+      updates.google_maps_url = url;
+    }
+
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { error: "No hay campos para actualizar." },
