@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Auth pages that should redirect authenticated users away
-  const authOnlyPaths = ["/auth/login", "/auth/registro-restaurante", "/auth/recuperar"];
+  const authOnlyPaths = ["/auth/login", "/auth/registro-restaurante", "/auth/recuperar", "/auth/registro"];
   const isAuthOnly = authOnlyPaths.some((p) => pathname.startsWith(p));
 
   if (isAuthOnly && user) {
@@ -67,5 +67,6 @@ export const config = {
     "/auth/login",
     "/auth/registro-restaurante",
     "/auth/recuperar",
+    "/auth/registro",
   ],
 };

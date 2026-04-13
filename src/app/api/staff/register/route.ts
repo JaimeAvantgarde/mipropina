@@ -69,16 +69,19 @@ export async function POST(request: Request) {
 
     const restaurant = invite.restaurant as unknown as { id: string; name: string; slug: string };
 
-    // Check if this user is already staff in this restaurant (prevent duplicate)
+    // Check if this user is already active staff in this restaurant (prevent duplicate)
     const { data: existingStaff } = await supabaseAdmin
       .from("staff")
-      .select("id")
+      .select("id, active")
       .eq("restaurant_id", restaurant.id)
       .eq("auth_user_id", resolvedUser!.id)
       .maybeSingle();
 
     if (existingStaff) {
-      // Already registered — mark invite as used and return success
+      if (!existingStaff.active) {
+        // Previously deactivated — reactivate on new invite
+        await supabaseAdmin.from("staff").update({ active: true }).eq("id", existingStaff.id);
+      }
       await supabaseAdmin.from("invite_code").update({ used: true }).eq("id", invite.id);
       return NextResponse.json({ success: true, restaurant_name: restaurant.name });
     }

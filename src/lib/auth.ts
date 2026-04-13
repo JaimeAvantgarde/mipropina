@@ -37,7 +37,8 @@ export async function requireAuth(): Promise<
       .from("staff")
       .select("id, restaurant_id, role")
       .eq("auth_user_id", user.id)
-      .single();
+      .eq("active", true)
+      .maybeSingle();
 
     if (!staffRecord) {
       return {
