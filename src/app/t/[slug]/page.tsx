@@ -6,6 +6,37 @@ import CustomAmount from "@/components/tipping/custom-amount";
 import PaymentForm from "@/components/tipping/payment-form";
 import { cn } from "@/lib/utils";
 
+function SamsungBrowserBanner({ slug }: { slug: string }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (/SamsungBrowser/i.test(navigator.userAgent)) {
+      setVisible(true);
+    }
+  }, []);
+
+  if (!visible) return null;
+
+  const pageUrl = `https://mipropina.es/t/${slug}`;
+  // Intent URL: abre directamente en Chrome en Android
+  const chromeIntent = `intent://${pageUrl.replace("https://", "")}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(pageUrl)};end`;
+
+  return (
+    <div className="w-full bg-[#1a3530] text-white px-4 py-3 flex items-center justify-between gap-3">
+      <p className="text-xs leading-tight">
+        <span className="font-semibold">Para pagar con Google Pay</span>
+        {" "}abre esta página en Chrome
+      </p>
+      <a
+        href={chromeIntent}
+        className="flex-shrink-0 bg-[#2ECC87] text-[#0D1B1E] text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap"
+      >
+        Abrir en Chrome
+      </a>
+    </div>
+  );
+}
+
 const DEFAULT_TIP_AMOUNTS = [100, 200, 300, 500]; // cents
 
 type Restaurant = {
@@ -115,6 +146,9 @@ export default function TipPage({ params }: PageProps) {
       className="min-h-screen bg-[#F5FAF7] flex flex-col items-center"
       style={{ "--brand-color": brandColor } as React.CSSProperties}
     >
+      {/* Samsung Internet warning */}
+      <SamsungBrowserBanner slug={slug} />
+
       {/* Brand accent header strip */}
       <div
         className="w-full h-28 bg-gradient-to-b to-transparent"
