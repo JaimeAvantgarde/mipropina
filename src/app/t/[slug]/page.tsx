@@ -6,6 +6,8 @@ import CustomAmount from "@/components/tipping/custom-amount";
 import PaymentForm from "@/components/tipping/payment-form";
 import { cn } from "@/lib/utils";
 
+const DEFAULT_TIP_AMOUNTS = [100, 200, 300, 500]; // cents
+
 type Restaurant = {
   id: string;
   name: string;
@@ -13,6 +15,8 @@ type Restaurant = {
   logo_emoji: string | null;
   logo_url: string | null;
   theme_color: string;
+  tip_amounts: number[] | null;
+  custom_amount_enabled: boolean | null;
 };
 
 type PageProps = {
@@ -49,6 +53,12 @@ export default function TipPage({ params }: PageProps) {
     fetchRestaurant();
   }, [slug]);
 
+  const tipAmounts = restaurant?.tip_amounts?.length
+    ? restaurant.tip_amounts
+    : DEFAULT_TIP_AMOUNTS;
+
+  const showCustomAmount = restaurant?.custom_amount_enabled !== false;
+
   /* Derived amount in cents */
   let amountCents: number | null = null;
   if (customExpanded) {
@@ -57,11 +67,11 @@ export default function TipPage({ params }: PageProps) {
       amountCents = Math.round(parsed * 100);
     }
   } else if (selectedAmount !== null) {
-    amountCents = selectedAmount * 100;
+    amountCents = selectedAmount;
   }
 
-  function handleGridSelect(amount: number) {
-    setSelectedAmount(amount);
+  function handleGridSelect(cents: number) {
+    setSelectedAmount(cents);
     setCustomExpanded(false);
     setCustomValue("");
   }
@@ -98,10 +108,18 @@ export default function TipPage({ params }: PageProps) {
     );
   }
 
+  const brandColor = restaurant.theme_color || "#2ECC87";
+
   return (
-    <main className="min-h-screen bg-[#F5FAF7] flex flex-col items-center">
-      {/* Green accent header strip */}
-      <div className="w-full h-28 bg-gradient-to-b from-[#2ECC87]/20 to-transparent" />
+    <main
+      className="min-h-screen bg-[#F5FAF7] flex flex-col items-center"
+      style={{ "--brand-color": brandColor } as React.CSSProperties}
+    >
+      {/* Brand accent header strip */}
+      <div
+        className="w-full h-28 bg-gradient-to-b to-transparent"
+        style={{ background: `linear-gradient(to bottom, ${brandColor}33, transparent)` }}
+      />
 
       {/* Card */}
       <div className="w-full max-w-md mx-auto -mt-16 px-4 pb-10">
@@ -133,18 +151,21 @@ export default function TipPage({ params }: PageProps) {
             )}
           >
             <AmountGrid
+              amounts={tipAmounts}
               selectedAmount={selectedAmount}
               onSelect={handleGridSelect}
             />
           </div>
 
           {/* Custom amount */}
-          <CustomAmount
-            value={customValue}
-            onChange={setCustomValue}
-            expanded={customExpanded}
-            onToggle={handleToggleCustom}
-          />
+          {showCustomAmount && (
+            <CustomAmount
+              value={customValue}
+              onChange={setCustomValue}
+              expanded={customExpanded}
+              onToggle={handleToggleCustom}
+            />
+          )}
 
           {/* Payment form — slides in when amount is chosen */}
           <div

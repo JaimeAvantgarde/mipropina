@@ -7,6 +7,13 @@ export type Restaurant = {
   theme_color: string;
   owner_id: string;
   stripe_account_id: string | null;
+  stripe_charges_enabled: boolean;
+  stripe_payouts_enabled: boolean;
+  tip_amounts: number[];
+  custom_amount_enabled: boolean;
+  thank_you_message: string | null;
+  email_notifications_enabled: boolean;
+  notification_email: string | null;
   created_at: string;
 };
 
@@ -23,11 +30,12 @@ export type Staff = {
   role: StaffRole;
   iban: string | null;
   stripe_payout_id: string | null;
+  stripe_payouts_enabled: boolean;
   active: boolean;
   created_at: string;
 };
 
-export type TipStatus = "pending" | "completed" | "failed";
+export type TipStatus = "pending" | "completed" | "failed" | "refunded";
 
 export type Tip = {
   id: string;

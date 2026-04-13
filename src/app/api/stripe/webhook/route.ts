@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { sendPushToRestaurant } from "@/lib/push";
+import { sendTipNotificationEmail } from "@/lib/email";
 import { formatCentsShort, calculatePlatformFee } from "@/lib/utils";
 import type Stripe from "stripe";
 
@@ -54,12 +55,60 @@ export async function POST(request: Request) {
         });
 
         if (restaurantId) {
+          // Push notification
           sendPushToRestaurant(restaurantId, {
             title: "Nueva propina",
             body: `Has recibido una propina de ${formatCentsShort(tipCents)}`,
             url: "/dashboard",
             tag: `tip-${paymentIntent.id}`,
           }).catch((err) => console.error("[webhook] Push error:", err));
+
+          // Email notification (if configured) — fire and forget
+          void (async () => {
+            try {
+              const { data: rest } = await supabaseAdmin
+                .from("restaurant")
+                .select("name, email_notifications_enabled, notification_email, owner_id")
+                .eq("id", restaurantId)
+                .single();
+
+              if (!rest?.email_notifications_enabled) return;
+
+              // Calculate today's total for the email
+              const todayStart = new Date();
+              todayStart.setHours(0, 0, 0, 0);
+              const { data: todayTips } = await supabaseAdmin
+                .from("tip")
+                .select("amount_cents, platform_fee_cents")
+                .eq("restaurant_id", restaurantId)
+                .eq("status", "completed")
+                .gte("created_at", todayStart.toISOString());
+
+              const totalTodayCents = (todayTips || []).reduce(
+                (sum: number, t: { amount_cents: number; platform_fee_cents: number }) =>
+                  sum + t.amount_cents - (t.platform_fee_cents || 0),
+                tipCents - calculatePlatformFee(tipCents)
+              );
+
+              // Get owner email if no override
+              let toEmail: string | null = rest.notification_email;
+              if (!toEmail && rest.owner_id) {
+                const { data: ownerUser } = await supabaseAdmin.auth.admin.getUserById(rest.owner_id);
+                toEmail = ownerUser?.user?.email ?? null;
+              }
+
+              if (toEmail) {
+                await sendTipNotificationEmail({
+                  to: toEmail,
+                  restaurantName: rest.name,
+                  amountCents: tipCents,
+                  totalTodayCents,
+                });
+              }
+            } catch (err) {
+              console.error("[webhook] Email notification error:", err);
+            }
+          })();
         }
         break;
       }

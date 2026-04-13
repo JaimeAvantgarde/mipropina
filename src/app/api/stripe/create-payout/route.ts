@@ -110,17 +110,21 @@ export async function POST(request: Request) {
       }
 
       try {
-        // Create Stripe Transfer
-        const transfer = await getStripe().transfers.create({
-          amount: payout.amount_cents,
-          currency: "eur",
-          destination: staff.stripe_payout_id,
-          metadata: {
-            distribution_id: distribution.id,
-            staff_id: payout.staff_id,
-            restaurant_id,
+        // Create Stripe Transfer — idempotency key prevents duplicate transfers on retry
+        const idempotencyKey = `payout-${distribution.id}-${payout.staff_id}`;
+        const transfer = await getStripe().transfers.create(
+          {
+            amount: payout.amount_cents,
+            currency: "eur",
+            destination: staff.stripe_payout_id,
+            metadata: {
+              distribution_id: distribution.id,
+              staff_id: payout.staff_id,
+              restaurant_id,
+            },
           },
-        });
+          { idempotencyKey }
+        );
 
         // Create payout record
         await supabaseAdmin.from("payout").insert({

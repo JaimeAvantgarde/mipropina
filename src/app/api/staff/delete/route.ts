@@ -44,13 +44,13 @@ export async function DELETE(request: Request) {
 
     const { error: deleteError } = await supabaseAdmin
       .from("staff")
-      .delete()
+      .update({ active: false })
       .eq("id", id);
 
     if (deleteError) {
       console.error("[staff/delete] Error:", deleteError);
       return NextResponse.json(
-        { error: "Error al eliminar el miembro." },
+        { error: "Error al dar de baja al miembro." },
         { status: 500 }
       );
     }
