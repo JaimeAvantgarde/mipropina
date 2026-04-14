@@ -240,71 +240,80 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
         {/* Mobile list */}
         <div className="md:hidden divide-y divide-gray-100">
           {members.map((m) => (
-            <div key={m.id} className="px-6 py-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#F5FAF7] flex items-center justify-center text-lg">
-                    {m.avatar_emoji}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-[#0D1B1E] text-sm">{m.name}</p>
-                    <div className="flex gap-2 mt-1">
-                      <Badge variant={m.role === "owner" ? "info" : "active"}>
-                        {roleLabels[m.role] || m.role}
-                      </Badge>
-                      {m.iban ? (
-                        <Badge variant="active">IBAN</Badge>
-                      ) : (
-                        <Badge variant="pending">Sin IBAN</Badge>
-                      )}
-                      {m.stripe_payout_id ? (
-                        <Badge variant="active">Stripe</Badge>
-                      ) : (
-                        <Badge variant="pending">Sin Stripe</Badge>
-                      )}
-                    </div>
-                  </div>
+            <div key={m.id} className="px-4 py-4">
+              {/* Top row: avatar + name + toggle */}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-11 h-11 rounded-full bg-[#F5FAF7] flex items-center justify-center text-xl flex-shrink-0">
+                  {m.avatar_emoji}
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openEdit(m)}
-                    className="p-1.5 text-gray-400 hover:text-[#2ECC87] hover:bg-[#F5FAF7] rounded-lg transition-colors cursor-pointer"
-                    title="Editar"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                    </svg>
-                  </button>
-                  {m.role !== "owner" && (
-                    <button
-                      onClick={() => setDeletingMember(m)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Eliminar"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        <line x1="10" y1="11" x2="10" y2="17" />
-                        <line x1="14" y1="11" x2="14" y2="17" />
-                      </svg>
-                    </button>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[#0D1B1E] text-sm leading-tight">{m.name}</p>
+                  {m.phone && (
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{m.phone}</p>
                   )}
+                </div>
+                {!readOnly && (
                   <button
                     onClick={() => toggleActive(m.id)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 cursor-pointer ${
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0 ${
                       m.active ? "bg-[#2ECC87]" : "bg-gray-300"
                     }`}
                     role="switch"
                     aria-checked={m.active}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
                         m.active ? "translate-x-6" : "translate-x-1"
                       }`}
                     />
                   </button>
-                </div>
+                )}
               </div>
+
+              {/* Badges row */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                <Badge variant={m.role === "owner" ? "info" : "active"}>
+                  {roleLabels[m.role] || m.role}
+                </Badge>
+                <Badge variant={m.active ? "active" : "pending"}>
+                  {m.active ? "Activo" : "Inactivo"}
+                </Badge>
+                <Badge variant={m.iban ? "active" : "pending"}>
+                  {m.iban ? "IBAN ✓" : "Sin IBAN"}
+                </Badge>
+                <Badge variant={m.stripe_payout_id ? "active" : "pending"}>
+                  {m.stripe_payout_id ? "Stripe ✓" : "Sin Stripe"}
+                </Badge>
+              </div>
+
+              {/* Action buttons */}
+              {!readOnly && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openEdit(m)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                    </svg>
+                    Editar
+                  </button>
+                  {m.role !== "owner" && (
+                    <button
+                      onClick={() => setDeletingMember(m)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                      </svg>
+                      Eliminar
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -64,26 +64,31 @@ export default function EquipoPage() {
             {pendingInvites.map((inv) => (
               <div
                 key={inv.id}
-                className="px-6 py-4 flex items-center justify-between"
+                className="px-4 sm:px-6 py-4"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-lg">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-lg flex-shrink-0">
                     ✉️
                   </div>
-                  <div>
-                    <p className="font-semibold text-[#0D1B1E] text-sm">
-                      {inv.name}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="font-semibold text-[#0D1B1E] text-sm">
+                        {inv.name}
+                      </p>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Badge variant="pending">Pendiente</Badge>
+                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                          {getRelativeTime(inv.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                      {inv.phone}
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {inv.phone} &middot; Codigo: {inv.code}
+                    <p className="text-xs text-gray-300 mt-0.5 font-mono truncate">
+                      {inv.code}
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="pending">Pendiente</Badge>
-                  <span className="text-xs text-gray-400">
-                    {getRelativeTime(inv.created_at)}
-                  </span>
                 </div>
               </div>
             ))}
