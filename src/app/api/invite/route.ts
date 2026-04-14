@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     const token = generateToken();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://mipropina.es";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace("mipropina-seven.vercel.app", "mipropina.es") || "https://mipropina.es";
     const inviteLink = `${appUrl}/auth/registro?token=${token}`;
 
     // Insert invite into database
