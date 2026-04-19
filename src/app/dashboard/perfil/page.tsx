@@ -26,8 +26,9 @@ export default function PerfilPage() {
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeConnecting, setStripeConnecting] = useState(false);
 
-  // Find current user's staff record
-  const currentStaff: Staff | null = data?.staff?.[0] || null;
+  // Find current user's staff record by their ID (not staff[0] which is always the owner)
+  const currentStaff: Staff | null =
+    data?.staff?.find((s) => s.id === data.currentUserStaffId) ?? null;
 
   const fetchStripeStatus = useCallback(async (payoutId: string) => {
     setStripeLoading(true);

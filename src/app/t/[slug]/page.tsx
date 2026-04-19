@@ -48,6 +48,7 @@ type Restaurant = {
   theme_color: string;
   tip_amounts: number[] | null;
   custom_amount_enabled: boolean | null;
+  stripe_charges_enabled: boolean;
 };
 
 type PageProps = {
@@ -94,7 +95,7 @@ export default function TipPage({ params }: PageProps) {
   let amountCents: number | null = null;
   if (customExpanded) {
     const parsed = parseFloat((customValue || "0").replace(",", "."));
-    if (!isNaN(parsed) && parsed >= 0.5 && parsed <= 200) {
+    if (!isNaN(parsed) && parsed >= 0.5 && parsed <= 500) {
       amountCents = Math.round(parsed * 100);
     }
   } else if (selectedAmount !== null) {
@@ -133,6 +134,22 @@ export default function TipPage({ params }: PageProps) {
           </h1>
           <p className="text-sm text-[#1A3C34]/60">
             El enlace no es correcto o el restaurante ya no existe.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!restaurant.stripe_charges_enabled) {
+    return (
+      <main className="min-h-screen bg-[#F5FAF7] flex flex-col items-center justify-center px-4">
+        <div className="text-center max-w-xs">
+          <div className="text-6xl mb-4">⏳</div>
+          <h1 className="font-[family-name:var(--font-serif)] text-2xl text-[#0D1B1E] mb-2">
+            {restaurant.name}
+          </h1>
+          <p className="text-sm text-[#1A3C34]/60">
+            Este local todavía no ha activado los pagos. Prueba de nuevo más tarde o comenta al establecimiento.
           </p>
         </div>
       </main>

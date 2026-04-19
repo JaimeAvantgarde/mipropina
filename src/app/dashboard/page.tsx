@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/utils";
 import { useDashboard } from "@/lib/dashboard-context";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -67,6 +68,14 @@ function AvgIcon() {
 export default function DashboardPage() {
   const [distributeOpen, setDistributeOpen] = useState(false);
   const { data, loading } = useDashboard();
+  const router = useRouter();
+
+  // Waiters have no business on the manager dashboard — send them to their profile
+  useEffect(() => {
+    if (!loading && data && data.currentUserRole === "waiter") {
+      router.replace("/dashboard/perfil");
+    }
+  }, [loading, data, router]);
 
   if (loading) {
     return (
@@ -138,8 +147,8 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Esta semana"
-          value={`${stats.tipsThisWeek}`}
-          subtitle="Propinas recibidas"
+          value={formatCents(stats.tipsThisWeekCents)}
+          subtitle={`${stats.tipsThisWeek} propina${stats.tipsThisWeek !== 1 ? "s" : ""} recibida${stats.tipsThisWeek !== 1 ? "s" : ""}`}
           icon={<CalendarIcon />}
           accent="#6366F1"
         />

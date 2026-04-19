@@ -18,7 +18,7 @@ export async function GET() {
     // Get staff record for this user
     const { data: staffRecord } = await supabaseAdmin
       .from("staff")
-      .select("restaurant_id, role")
+      .select("id, restaurant_id, role")
       .eq("auth_user_id", user.id)
       .eq("active", true)
       .maybeSingle();
@@ -32,6 +32,7 @@ export async function GET() {
 
     const restaurantId = staffRecord.restaurant_id;
     const currentUserRole = staffRecord.role || "waiter";
+    const currentUserStaffId = staffRecord.id;
 
     // Fetch restaurant
     const { data: restaurant, error: restError } = await supabaseAdmin
@@ -101,6 +102,12 @@ export async function GET() {
     const tipsThisWeek = allTips.filter(
       (t: { created_at: string }) => new Date(t.created_at) >= weekStart
     );
+    const tipsThisWeekCompleted = tipsThisWeek.filter((t: { status: string }) => t.status === "completed");
+    const tipsThisWeekCents = tipsThisWeekCompleted.reduce(
+      (sum: number, t: { amount_cents: number; platform_fee_cents?: number }) =>
+        sum + t.amount_cents - (t.platform_fee_cents || 0),
+      0
+    );
 
     return NextResponse.json({
       restaurant,
@@ -108,12 +115,13 @@ export async function GET() {
       tips: allTips,
       pendingInvites: pendingInvites || [],
       currentUserRole,
+      currentUserStaffId,
       stats: {
         totalCents,
-        totalFeeCents,
         netCents,
         totalDistributed,
         tipsThisWeek: tipsThisWeek.length,
+        tipsThisWeekCents,
         activeStaff: (staff || []).length,
         avgCents,
       },

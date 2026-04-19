@@ -2,8 +2,23 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { CLIENT_FEE_CENTS } from "@/lib/utils";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  // Rate limit: 10 intentos por IP por minuto
+  const ip = getClientIp(request);
+  const { allowed, remaining } = checkRateLimit(`payment:${ip}`, 10, 60_000);
+
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Por favor espera un momento." },
+      {
+        status: 429,
+        headers: { "Retry-After": "60", "X-RateLimit-Remaining": "0" },
+      }
+    );
+  }
+
   try {
     const body = await request.json();
     const { restaurant_id, amount_cents } = body;
@@ -15,10 +30,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate restaurant exists
+    // Validate restaurant exists AND has Stripe charges enabled
     const { data: restaurant } = await supabaseAdmin
       .from("restaurant")
-      .select("id")
+      .select("id, stripe_charges_enabled")
       .eq("id", restaurant_id)
       .maybeSingle();
 
@@ -26,6 +41,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Restaurante no encontrado." },
         { status: 404 }
+      );
+    }
+
+    if (!restaurant.stripe_charges_enabled) {
+      return NextResponse.json(
+        { error: "Este restaurante aún no puede recibir propinas. Contacta con el local." },
+        { status: 422 }
       );
     }
 
@@ -60,9 +82,10 @@ export async function POST(request: Request) {
     });
 
     // Tip record is created in the webhook when payment succeeds
-    return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-    });
+    return NextResponse.json(
+      { clientSecret: paymentIntent.client_secret },
+      { headers: { "X-RateLimit-Remaining": String(remaining) } }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido";
     console.error("[create-payment] Error:", message);

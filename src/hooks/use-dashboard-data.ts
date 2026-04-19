@@ -46,11 +46,12 @@ export type DashboardData = {
   tips: Tip[];
   pendingInvites: InviteCode[];
   currentUserRole: "owner" | "waiter";
+  currentUserStaffId: string;
   stats: {
     totalCents: number;
-    totalFeeCents: number;
     netCents: number;
     tipsThisWeek: number;
+    tipsThisWeekCents: number;
     activeStaff: number;
     avgCents: number;
   };
@@ -65,13 +66,22 @@ export function useDashboardData() {
   const computeMockStats = useCallback(() => {
     const completedTips = mockTips.filter((t) => t.status === "completed");
     const totalCents = completedTips.reduce((sum, t) => sum + t.amount_cents, 0);
-    const avgCents = completedTips.length > 0 ? Math.round(totalCents / completedTips.length) : 0;
+    const totalFeeCents = completedTips.reduce((sum, t) => sum + (t.platform_fee_cents || 0), 0);
+    const netCents = totalCents - totalFeeCents;
+    const avgCents = completedTips.length > 0 ? Math.round(netCents / completedTips.length) : 0;
     const activeStaff = mockStaff.filter((s) => s.active);
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+    weekStart.setHours(0, 0, 0, 0);
+    const thisWeekCompleted = completedTips.filter((t) => new Date(t.created_at) >= weekStart);
+    const tipsThisWeekCents = thisWeekCompleted.reduce(
+      (sum, t) => sum + t.amount_cents - (t.platform_fee_cents || 0), 0
+    );
     return {
       totalCents,
-      totalFeeCents: 0,
-      netCents: totalCents,
+      netCents,
       tipsThisWeek: mockTips.length,
+      tipsThisWeekCents,
       activeStaff: activeStaff.length,
       avgCents,
     };

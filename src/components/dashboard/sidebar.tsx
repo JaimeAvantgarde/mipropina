@@ -15,19 +15,24 @@ interface SidebarProps {
   staffRole?: string;
 }
 
-const allNavItems = [
-  { emoji: "\uD83D\uDCCA", label: "Vista general", href: "/dashboard", ownerOnly: false },
-  { emoji: "\uD83D\uDC65", label: "Equipo", href: "/dashboard/equipo", ownerOnly: false },
-  { emoji: "\uD83D\uDCCB", label: "Repartos", href: "/dashboard/repartos", ownerOnly: true },
-  { emoji: "\uD83D\uDC64", label: "Mi perfil", href: "/dashboard/perfil", ownerOnly: false },
-  { emoji: "\u2699\uFE0F", label: "Ajustes", href: "/dashboard/ajustes", ownerOnly: true },
+const ownerNavItems = [
+  { emoji: "\uD83D\uDCCA", label: "Vista general", href: "/dashboard" },
+  { emoji: "\uD83D\uDC65", label: "Equipo", href: "/dashboard/equipo" },
+  { emoji: "\uD83D\uDCCB", label: "Repartos", href: "/dashboard/repartos" },
+  { emoji: "\uD83D\uDC64", label: "Mi perfil", href: "/dashboard/perfil" },
+  { emoji: "\u2699\uFE0F", label: "Ajustes", href: "/dashboard/ajustes" },
+];
+
+const waiterNavItems = [
+  { emoji: "\uD83D\uDC64", label: "Mi perfil", href: "/dashboard/perfil" },
+  { emoji: "\uD83D\uDC65", label: "Equipo", href: "/dashboard/equipo" },
 ];
 
 function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurantLogoUrl, staffRole }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const isOwner = staffRole === "owner";
-  const navItems = allNavItems.filter((item) => !item.ownerOnly || isOwner);
+  const navItems = isOwner ? ownerNavItems : waiterNavItems;
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
