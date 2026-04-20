@@ -120,6 +120,7 @@ export function useDashboardData() {
           tips: mockTips,
           pendingInvites: mockPendingInvites,
           currentUserRole: "owner",
+          currentUserStaffId: mockStaff[0].id,
           stats: computeMockStats(),
         });
         setIsUsingMock(true);
