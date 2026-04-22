@@ -17,9 +17,12 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
   const [members, setMembers] = useState(staff);
   const [editingMember, setEditingMember] = useState<Staff | null>(null);
   const [deletingMember, setDeletingMember] = useState<Staff | null>(null);
+  const [deactivatingMember, setDeactivatingMember] = useState<Staff | null>(null);
   const [editForm, setEditForm] = useState({ name: "", email: "", phone: "", avatar_emoji: "" });
+  const [editError, setEditError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   const toggleActive = async (id: string) => {
     const member = members.find((m) => m.id === id);
@@ -37,7 +40,6 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
         body: JSON.stringify({ id, active: newActive }),
       });
       if (!res.ok) {
-        // Revert on error
         setMembers((prev) =>
           prev.map((m) => (m.id === id ? { ...m, active: !newActive } : m))
         );
@@ -49,7 +51,28 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
     }
   };
 
+  const handleToggleActive = (id: string) => {
+    const member = members.find((m) => m.id === id);
+    if (!member) return;
+    if (member.active) {
+      // Deactivating — ask for confirmation first
+      setDeactivatingMember(member);
+    } else {
+      // Reactivating — no confirmation needed
+      toggleActive(id);
+    }
+  };
+
+  const confirmDeactivate = async () => {
+    if (!deactivatingMember) return;
+    setDeactivating(true);
+    await toggleActive(deactivatingMember.id);
+    setDeactivating(false);
+    setDeactivatingMember(null);
+  };
+
   const openEdit = (member: Staff) => {
+    setEditError(null);
     setEditForm({
       name: member.name,
       email: member.email,
@@ -83,7 +106,7 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
         onRefresh?.();
       }
     } catch {
-      // silently fail
+      setEditError("No se pudieron guardar los cambios. Inténtalo de nuevo.");
     } finally {
       setSaving(false);
     }
@@ -187,7 +210,7 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
                       </Badge>
                     ) : (
                       <button
-                        onClick={() => toggleActive(m.id)}
+                        onClick={() => handleToggleActive(m.id)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 cursor-pointer ${
                           m.active ? "bg-[#2ECC87]" : "bg-gray-300"
                         }`}
@@ -254,7 +277,7 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
                 </div>
                 {!readOnly && (
                   <button
-                    onClick={() => toggleActive(m.id)}
+                    onClick={() => handleToggleActive(m.id)}
                     className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 cursor-pointer flex-shrink-0 ${
                       m.active ? "bg-[#2ECC87]" : "bg-gray-300"
                     }`}
@@ -388,6 +411,10 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
             />
           </div>
 
+          {editError && (
+            <p className="text-xs text-red-500 text-center -mb-1">{editError}</p>
+          )}
+
           {/* Actions */}
           <div className="flex gap-3 pt-2">
             <Button
@@ -405,6 +432,46 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
             >
               Guardar
             </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Deactivate confirmation modal */}
+      <Modal
+        open={!!deactivatingMember}
+        onClose={() => setDeactivatingMember(null)}
+        title="Desactivar miembro"
+      >
+        <div className="flex flex-col gap-5">
+          <div className="text-center">
+            <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center text-2xl mx-auto mb-3">
+              {deactivatingMember?.avatar_emoji}
+            </div>
+            <p className="text-sm text-gray-600">
+              ¿Desactivar a{" "}
+              <span className="font-semibold text-[#0D1B1E]">
+                {deactivatingMember?.name}
+              </span>?
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              No recibirá repartos ni aparecerá como activo. Puedes reactivarlo en cualquier momento.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setDeactivatingMember(null)}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <button
+              onClick={confirmDeactivate}
+              disabled={deactivating}
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {deactivating ? "Desactivando..." : "Desactivar"}
+            </button>
           </div>
         </div>
       </Modal>

@@ -67,15 +67,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch staff records to get stripe_payout_id
-    const staffIds = payouts.map((p: any) => p.staff_id);
+    // Fetch staff records — validate ALL belong to this restaurant (prevents cross-restaurant IDOR)
+    const staffIds = [...new Set<string>(payouts.map((p: any) => p.staff_id))];
     const { data: staffRecords } = await supabaseAdmin
       .from("staff")
       .select("id, stripe_payout_id, name")
-      .in("id", staffIds);
+      .in("id", staffIds)
+      .eq("restaurant_id", restaurant_id);
 
-    if (!staffRecords) {
-      return NextResponse.json({ error: "No se encontraron los camareros." }, { status: 404 });
+    if (!staffRecords || staffRecords.length !== staffIds.length) {
+      return NextResponse.json({ error: "Algunos camareros no pertenecen a este restaurante." }, { status: 403 });
     }
 
     // Create distribution record

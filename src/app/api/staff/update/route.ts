@@ -17,6 +17,19 @@ export async function PUT(request: Request) {
     const { auth, error: authError } = await requireAuth();
     if (authError) return authError;
 
+    const isSelf = auth.staffId === id;
+    const isOwner = auth.role === "owner";
+
+    // Only owner or the member themselves can update a profile
+    if (!isSelf && !isOwner) {
+      return NextResponse.json({ error: "Solo puedes modificar tu propio perfil." }, { status: 403 });
+    }
+
+    // Only owners can change active status
+    if (!isOwner && active !== undefined) {
+      return NextResponse.json({ error: "No tienes permiso para cambiar el estado del miembro." }, { status: 403 });
+    }
+
     // Verify staff belongs to same restaurant
     const { data: targetStaff } = await supabaseAdmin
       .from("staff")
@@ -30,11 +43,11 @@ export async function PUT(request: Request) {
     // Build update object with only provided fields
     const updates: Record<string, unknown> = {};
     if (iban !== undefined) updates.iban = iban?.trim() || null;
-    if (email !== undefined) updates.email = email.trim();
+    if (isOwner && email !== undefined) updates.email = email.trim();
     if (name !== undefined) updates.name = name.trim();
     if (phone !== undefined) updates.phone = phone?.trim() || null;
     if (avatar_emoji !== undefined) updates.avatar_emoji = avatar_emoji;
-    if (active !== undefined) updates.active = active;
+    if (isOwner && active !== undefined) updates.active = active;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

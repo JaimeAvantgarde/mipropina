@@ -46,13 +46,18 @@ export async function POST(request: Request) {
           `[webhook] Payment succeeded: ${paymentIntent.id} | Restaurant: ${restaurantId} | Tip: ${tipCents}`
         );
 
-        await supabaseAdmin.from("tip").insert({
+        // Upsert (not insert) to make the webhook idempotent — Stripe can retry events
+        const { error: tipError } = await supabaseAdmin.from("tip").upsert({
           restaurant_id: restaurantId,
           amount_cents: tipCents,
           platform_fee_cents: calculatePlatformFee(tipCents),
           stripe_payment_id: paymentIntent.id,
           status: "completed",
-        });
+        }, { onConflict: "stripe_payment_id", ignoreDuplicates: true });
+
+        if (tipError) {
+          console.error("[webhook] Error upserting tip:", tipError);
+        }
 
         if (restaurantId) {
           // Push notification
@@ -126,12 +131,13 @@ export async function POST(request: Request) {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const paymentIntentId = charge.payment_intent as string;
-        console.log(`[webhook] Charge refunded: ${charge.id} | PI: ${paymentIntentId}`);
+        const isFullRefund = charge.amount_refunded >= charge.amount;
+        console.log(`[webhook] Charge refunded: ${charge.id} | PI: ${paymentIntentId} | full=${isFullRefund} | refunded=${charge.amount_refunded}/${charge.amount}`);
 
         if (paymentIntentId) {
           await supabaseAdmin
             .from("tip")
-            .update({ status: "refunded" })
+            .update({ status: isFullRefund ? "refunded" : "completed" })
             .eq("stripe_payment_id", paymentIntentId);
 
           const restaurantId = charge.metadata?.restaurant_id;

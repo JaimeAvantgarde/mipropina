@@ -36,6 +36,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No tienes acceso a este perfil." }, { status: 403 });
     }
 
+    // Only the staff member themselves or an owner can create/access a Stripe Connect account
+    const isSelf = auth.staffId === staff_id;
+    const isOwner = auth.role === "owner";
+    if (!isSelf && !isOwner) {
+      return NextResponse.json({ error: "Solo puedes crear tu propia cuenta de Stripe." }, { status: 403 });
+    }
+
     let accountId = staff.stripe_payout_id;
 
     // Create Stripe Connect Express account

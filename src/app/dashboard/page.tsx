@@ -140,28 +140,28 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           label="Disponible para repartir"
-          value={formatCents(stats.netCents)}
+          value={formatCents(stats.netCents ?? 0)}
           subtitle={`${tips.filter(t => t.status === "completed").length} propina${tips.filter(t => t.status === "completed").length !== 1 ? "s" : ""} completada${tips.filter(t => t.status === "completed").length !== 1 ? "s" : ""}`}
           icon={<CoinsIcon />}
           accent="#2ECC87"
         />
         <StatCard
           label="Esta semana"
-          value={formatCents(stats.tipsThisWeekCents)}
-          subtitle={`${stats.tipsThisWeek} propina${stats.tipsThisWeek !== 1 ? "s" : ""} recibida${stats.tipsThisWeek !== 1 ? "s" : ""}`}
+          value={formatCents(stats.tipsThisWeekCents ?? 0)}
+          subtitle={`${stats.tipsThisWeek ?? 0} propina${(stats.tipsThisWeek ?? 0) !== 1 ? "s" : ""} recibida${(stats.tipsThisWeek ?? 0) !== 1 ? "s" : ""}`}
           icon={<CalendarIcon />}
           accent="#6366F1"
         />
         <StatCard
           label="Equipo"
-          value={`${stats.activeStaff}`}
-          subtitle={`persona${stats.activeStaff !== 1 ? "s" : ""} activa${stats.activeStaff !== 1 ? "s" : ""}`}
+          value={`${stats.activeStaff ?? 0}`}
+          subtitle={`persona${(stats.activeStaff ?? 0) !== 1 ? "s" : ""} activa${(stats.activeStaff ?? 0) !== 1 ? "s" : ""}`}
           icon={<TeamIcon />}
           accent="#F59E0B"
         />
         <StatCard
           label="Media neta"
-          value={formatCents(stats.avgCents)}
+          value={formatCents(stats.avgCents ?? 0)}
           subtitle="Por propina"
           icon={<AvgIcon />}
           accent="#EC4899"
@@ -223,7 +223,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="p-8 text-center">
-            <p className="text-gray-400 text-sm mb-3">Tu equipo aparecera aqui</p>
+            <p className="text-gray-400 text-sm mb-3">Tu equipo aparecerá aquí</p>
             {isOwner && (
               <Link href="/dashboard/equipo">
                 <Button variant="secondary" size="sm">Invitar camareros</Button>

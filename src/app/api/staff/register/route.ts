@@ -46,18 +46,14 @@ export async function POST(request: Request) {
     let resolvedUser = authUser?.user ?? null;
 
     if (authError) {
-      // If user already exists, try to get them
       if (authError.message?.includes("already been registered") || authError.status === 422) {
-        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
-        const existingUser = users.find((u) => u.email === email.trim());
-        if (!existingUser) {
-          return NextResponse.json(
-            { error: "Error al crear la cuenta. El email puede estar en uso." },
-            { status: 400 }
-          );
-        }
-        // Use existing user
-        resolvedUser = existingUser;
+        // Do not silently reuse an existing user from another restaurant —
+        // that would let an attacker associate someone else's account with a new restaurant.
+        // Existing users must log in and accept the invite via a separate flow.
+        return NextResponse.json(
+          { error: "Este email ya está registrado. Si ya tienes una cuenta, inicia sesión para aceptar la invitación." },
+          { status: 422 }
+        );
       } else {
         console.error("[staff/register] Auth error:", authError);
         return NextResponse.json(
