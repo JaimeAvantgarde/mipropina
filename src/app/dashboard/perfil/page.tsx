@@ -25,6 +25,7 @@ export default function PerfilPage() {
   } | null>(null);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeConnecting, setStripeConnecting] = useState(false);
+  const [myPayouts, setMyPayouts] = useState<{ totalCents: number; weekCents: number } | null>(null);
 
   // Find current user's staff record by their ID (not staff[0] which is always the owner)
   const currentStaff: Staff | null =
@@ -56,15 +57,19 @@ export default function PerfilPage() {
     }
   }, [currentStaff, fetchStripeStatus]);
 
-  // Calculate tip stats
-  const completedTips = (data?.tips || []).filter((t) => t.status === "completed");
-  const totalCents = completedTips.reduce((sum, t) => sum + t.amount_cents, 0);
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
-  weekStart.setHours(0, 0, 0, 0);
-  const weekCents = completedTips
-    .filter((t) => new Date(t.created_at) >= weekStart)
-    .reduce((sum, t) => sum + t.amount_cents, 0);
+  useEffect(() => {
+    fetch("/api/staff/my-payouts")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.totalCents !== undefined) {
+          setMyPayouts({ totalCents: json.totalCents, weekCents: json.weekCents });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const totalCents = myPayouts?.totalCents ?? 0;
+  const weekCents = myPayouts?.weekCents ?? 0;
 
   async function handleStripeConnect() {
     if (!currentStaff) return;
@@ -151,11 +156,11 @@ export default function PerfilPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         <Card className="text-center">
-          <p className="text-sm text-gray-500 mb-1">Propinas esta semana</p>
+          <p className="text-sm text-gray-500 mb-1">Cobrado esta semana</p>
           <p className="text-2xl font-bold text-[#0D1B1E]">{formatCents(weekCents)}</p>
         </Card>
         <Card className="text-center">
-          <p className="text-sm text-gray-500 mb-1">Total acumulado</p>
+          <p className="text-sm text-gray-500 mb-1">Total cobrado</p>
           <p className="text-2xl font-bold text-[#0D1B1E]">{formatCents(totalCents)}</p>
         </Card>
       </div>
