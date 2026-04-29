@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { GoogleButton } from "@/components/auth/google-button";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -75,11 +76,11 @@ export default function RegistroPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#F5FAF7] px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <a href="/" className="inline-block">
+          <Link href="/" className="inline-block">
             <span className="font-[family-name:var(--font-serif)] text-3xl text-[#0D1B1E]">
               mi<span className="text-[#2ECC87]">propina</span>
             </span>
-          </a>
+          </Link>
         </div>
 
         <Card>

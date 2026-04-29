@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
 
+function csvCell(value: string | number) {
+  const raw = String(value);
+  const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
 export async function GET() {
   const { auth, error: authError } = await requireOwner();
   if (authError) return authError;
@@ -17,13 +23,13 @@ export async function GET() {
   }
 
   const rows = [
-    ["Fecha", "Propina (€)", "Comision plataforma (€)", "Neto (€)", "Estado", "ID Stripe"].join(";"),
+    ["Fecha", "Propina (€)", "Comision plataforma (€)", "Neto (€)", "Estado", "ID Stripe"].map(csvCell).join(";"),
     ...(tips || []).map((t) => {
       const amount = (t.amount_cents / 100).toFixed(2);
       const fee = ((t.platform_fee_cents || 0) / 100).toFixed(2);
       const net = ((t.amount_cents - (t.platform_fee_cents || 0)) / 100).toFixed(2);
       const date = new Date(t.created_at).toLocaleDateString("es-ES");
-      return [date, amount, fee, net, t.status, t.stripe_payment_id || ""].join(";");
+      return [date, amount, fee, net, t.status, t.stripe_payment_id || ""].map(csvCell).join(";");
     }),
   ];
 

@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const { allowed } = checkRateLimit(`staff-register:${ip}`, 10, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Espera un momento." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { token, name, email, password, phone, iban } = body;
 
@@ -43,7 +53,7 @@ export async function POST(request: Request) {
       email_confirm: true,
     });
 
-    let resolvedUser = authUser?.user ?? null;
+    const resolvedUser = authUser?.user ?? null;
 
     if (authError) {
       if (authError.message?.includes("already been registered") || authError.status === 422) {
@@ -98,6 +108,9 @@ export async function POST(request: Request) {
 
     if (staffError) {
       console.error("[staff/register] Staff insert error:", staffError);
+      if (resolvedUser?.id) {
+        await supabaseAdmin.auth.admin.deleteUser(resolvedUser.id);
+      }
       return NextResponse.json(
         { error: "Error al crear el perfil. Es posible que ya estés registrado en este restaurante." },
         { status: 500 }
@@ -108,7 +121,8 @@ export async function POST(request: Request) {
     await supabaseAdmin
       .from("invite_code")
       .update({ used: true })
-      .eq("id", invite.id);
+      .eq("id", invite.id)
+      .eq("used", false);
 
     return NextResponse.json({
       success: true,

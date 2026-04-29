@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
+import { getRestaurantTipLedger } from "@/lib/balances";
 
 type PayoutEntry = {
   staff_id: string;
@@ -30,6 +31,20 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      payouts.some(
+        (p) =>
+          typeof p.staff_id !== "string" ||
+          !Number.isInteger(p.amount_cents) ||
+          p.amount_cents <= 0
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Los pagos deben tener camarero e importe válido." },
+        { status: 400 }
+      );
+    }
+
     const totalCents = payouts.reduce((sum, p) => sum + p.amount_cents, 0);
 
     if (totalCents <= 0) {
@@ -41,6 +56,29 @@ export async function POST(request: Request) {
 
     const { auth, error: authError } = await requireOwner(restaurant_id);
     if (authError) return authError;
+
+    const ledger = await getRestaurantTipLedger(restaurant_id);
+    if (totalCents > ledger.availableCents) {
+      return NextResponse.json(
+        { error: "El reparto excede el saldo disponible." },
+        { status: 400 }
+      );
+    }
+
+    const staffIds = [...new Set(payouts.map((p) => p.staff_id))];
+    const { data: staffRecords } = await supabaseAdmin
+      .from("staff")
+      .select("id")
+      .in("id", staffIds)
+      .eq("restaurant_id", restaurant_id)
+      .eq("active", true);
+
+    if (!staffRecords || staffRecords.length !== staffIds.length) {
+      return NextResponse.json(
+        { error: "Algunos camareros no pertenecen a este restaurante." },
+        { status: 403 }
+      );
+    }
 
     // Create distribution record
     const now = new Date();

@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
 
+function csvCell(value: string | number) {
+  const raw = String(value);
+  const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
 export async function GET() {
   const { auth, error: authError } = await requireOwner();
   if (authError) return authError;
@@ -20,7 +26,7 @@ export async function GET() {
   }
 
   const rows = [
-    ["Fecha", "Semana inicio", "Semana fin", "Total (€)", "Metodo", "Estado", "Camareros"].join(";"),
+    ["Fecha", "Semana inicio", "Semana fin", "Total (€)", "Metodo", "Estado", "Camareros"].map(csvCell).join(";"),
     ...(distributions || []).map((d) => {
       const date = new Date(d.created_at).toLocaleDateString("es-ES");
       const total = (d.total_cents / 100).toFixed(2);
@@ -28,7 +34,7 @@ export async function GET() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((p: any) => `${p.staff?.name || "?"} ${(p.amount_cents / 100).toFixed(2)}€`)
         .join(" | ");
-      return [date, d.week_start, d.week_end, total, d.method, d.status, waiters].join(";");
+      return [date, d.week_start, d.week_end, total, d.method, d.status, waiters].map(csvCell).join(";");
     }),
   ];
 

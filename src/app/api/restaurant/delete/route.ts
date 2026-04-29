@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireOwner } from "@/lib/auth";
 
 export async function DELETE(request: Request) {
   try {
@@ -13,68 +13,34 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Verify the user is the owner of this restaurant
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { error: authError } = await requireOwner(id);
+    if (authError) return authError;
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "No autenticado." },
-        { status: 401 }
-      );
-    }
+    const deletedAt = new Date().toISOString();
 
-    const { data: staffRecord } = await supabaseAdmin
-      .from("staff")
-      .select("role, restaurant_id")
-      .eq("auth_user_id", user.id)
-      .eq("restaurant_id", id)
-      .single();
-
-    if (!staffRecord || staffRecord.role !== "owner") {
-      return NextResponse.json(
-        { error: "Solo el gerente puede eliminar el restaurante." },
-        { status: 403 }
-      );
-    }
-
-    // Delete in order: payouts → distributions → tips → invite_codes → qr_codes → staff → restaurant
-    // (respecting foreign key constraints)
-    await supabaseAdmin
-      .from("payout")
-      .delete()
-      .in("distribution_id",
-        (await supabaseAdmin.from("distribution").select("id").eq("restaurant_id", id)).data?.map((d: { id: string }) => d.id) || []
-      );
-
-    await supabaseAdmin.from("distribution").delete().eq("restaurant_id", id);
-    await supabaseAdmin.from("tip").delete().eq("restaurant_id", id);
-    await supabaseAdmin.from("invite_code").delete().eq("restaurant_id", id);
-    await supabaseAdmin.from("qr_code").delete().eq("restaurant_id", id);
-    await supabaseAdmin.from("staff").delete().eq("restaurant_id", id);
-
-    // Delete logo from storage
-    const { data: restaurant } = await supabaseAdmin
+    const { error: restaurantError } = await supabaseAdmin
       .from("restaurant")
-      .select("logo_url")
+      .update({ deleted_at: deletedAt })
       .eq("id", id)
-      .single();
+      .is("deleted_at", null);
 
-    if (restaurant?.logo_url) {
-      const path = `restaurants/${id}`;
-      const { data: files } = await supabaseAdmin.storage.from("logos").list(path);
-      if (files?.length) {
-        await supabaseAdmin.storage.from("logos").remove(files.map((f: { name: string }) => `${path}/${f.name}`));
-      }
+    if (restaurantError) {
+      console.error("[restaurant/delete] Error:", restaurantError);
+      return NextResponse.json(
+        { error: "Error al archivar el restaurante." },
+        { status: 500 }
+      );
     }
 
-    // Finally delete the restaurant
-    const { error } = await supabaseAdmin.from("restaurant").delete().eq("id", id);
+    const { error: staffError } = await supabaseAdmin
+      .from("staff")
+      .update({ active: false })
+      .eq("restaurant_id", id);
 
-    if (error) {
-      console.error("[restaurant/delete] Error:", error);
+    if (staffError) {
+      console.error("[restaurant/delete] Staff archive error:", staffError);
       return NextResponse.json(
-        { error: "Error al eliminar el restaurante." },
+        { error: "Restaurante archivado, pero no se pudo desactivar el equipo." },
         { status: 500 }
       );
     }

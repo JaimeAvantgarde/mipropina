@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { auth, error: authError } = await requireOwner(restaurant_id);
+    const { error: authError } = await requireOwner(restaurant_id);
     if (authError) return authError;
 
     // Check if restaurant already has a Stripe account
@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       .from("restaurant")
       .select("id, name, stripe_account_id")
       .eq("id", restaurant_id)
+      .is("deleted_at", null)
       .single();
 
     if (!restaurant) {

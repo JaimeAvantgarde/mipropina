@@ -14,7 +14,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    const { auth, error: authError } = await requireOwner(id);
+    const { error: authError } = await requireOwner(id);
     if (authError) return authError;
 
     // Build update object with only provided fields
@@ -23,7 +23,16 @@ export async function PUT(request: Request) {
 
     if (body.name?.trim()) updates.name = body.name.trim();
     if (body.logo_emoji) updates.logo_emoji = body.logo_emoji;
-    if (body.logo_url !== undefined) updates.logo_url = body.logo_url;
+    if (body.logo_url !== undefined) {
+      const logoUrl = body.logo_url?.trim() || null;
+      if (logoUrl && !/^https:\/\//.test(logoUrl)) {
+        return NextResponse.json(
+          { error: "La URL del logo debe usar HTTPS." },
+          { status: 400 }
+        );
+      }
+      updates.logo_url = logoUrl;
+    }
 
     // Validate and apply hex color
     if (body.theme_color && /^#[0-9A-Fa-f]{6}$/.test(body.theme_color)) {
@@ -32,10 +41,18 @@ export async function PUT(request: Request) {
 
     // Slug requires uniqueness check
     if (body.slug?.trim()) {
+      const cleanSlug = body.slug.trim().toLowerCase();
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(cleanSlug)) {
+        return NextResponse.json(
+          { error: "La URL solo puede contener letras, números y guiones." },
+          { status: 400 }
+        );
+      }
+
       const { data: existingSlug } = await supabaseAdmin
         .from("restaurant")
         .select("id")
-        .eq("slug", body.slug.trim())
+        .eq("slug", cleanSlug)
         .neq("id", id)
         .maybeSingle();
 
@@ -45,7 +62,7 @@ export async function PUT(request: Request) {
           { status: 409 }
         );
       }
-      updates.slug = body.slug.trim();
+      updates.slug = cleanSlug;
     }
 
     // Configurable tip amounts (array of 2–8 amounts between 0.50€ and 500€)

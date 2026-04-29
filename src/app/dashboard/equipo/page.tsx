@@ -85,9 +85,6 @@ export default function EquipoPage() {
                     <p className="text-xs text-gray-400 mt-0.5 truncate">
                       {inv.phone}
                     </p>
-                    <p className="text-xs text-gray-300 mt-0.5 font-mono truncate">
-                      {inv.code}
-                    </p>
                   </div>
                 </div>
               </div>

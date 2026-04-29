@@ -22,6 +22,7 @@ const mockRestaurant: Restaurant = {
   notification_email: null,
   google_maps_url: null,
   created_at: "2024-01-01",
+  deleted_at: null,
 };
 
 const mockTips: Tip[] = [

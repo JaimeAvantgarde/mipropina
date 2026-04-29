@@ -7,13 +7,10 @@ import PaymentForm from "@/components/tipping/payment-form";
 import { cn } from "@/lib/utils";
 
 function SamsungBrowserBanner({ slug }: { slug: string }) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (/SamsungBrowser/i.test(navigator.userAgent)) {
-      setVisible(true);
-    }
-  }, []);
+  const [visible] = useState(() => {
+    if (typeof navigator === "undefined") return false;
+    return /SamsungBrowser/i.test(navigator.userAgent);
+  });
 
   if (!visible) return null;
 

@@ -16,6 +16,7 @@ export type Restaurant = {
   notification_email: string | null;
   google_maps_url: string | null;
   created_at: string;
+  deleted_at: string | null;
 };
 
 export type StaffRole = "owner" | "waiter";
@@ -61,6 +62,7 @@ export type Distribution = {
   method: DistributionMethod;
   status: DistributionStatus;
   created_by: string;
+  request_hash: string | null;
   created_at: string;
 };
 
@@ -79,7 +81,7 @@ export type Payout = {
 export type InviteCode = {
   id: string;
   restaurant_id: string;
-  code: string;
+  code?: string;
   phone: string;
   name: string;
   used: boolean;

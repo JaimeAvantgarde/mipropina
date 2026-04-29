@@ -1,54 +1,59 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth";
+import { getRestaurantTipLedger } from "@/lib/balances";
+
+type StaffRow = {
+  id: string;
+  restaurant_id: string;
+  auth_user_id: string | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  avatar_emoji: string;
+  role: "owner" | "waiter";
+  iban: string | null;
+  stripe_payout_id: string | null;
+  stripe_payouts_enabled: boolean;
+  active: boolean;
+  created_at: string;
+};
+
+type TipRow = {
+  id: string;
+  restaurant_id: string;
+  amount_cents: number;
+  platform_fee_cents?: number | null;
+  stripe_payment_id?: string | null;
+  status: string;
+  customer_session?: string | null;
+  created_at: string;
+};
 
 export async function GET() {
   try {
-    // Require authenticated user
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { auth, error: authError } = await requireAuth();
+    if (authError) return authError;
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "No autenticado.", no_restaurant: true },
-        { status: 401 }
-      );
-    }
+    const restaurantId = auth.restaurantId;
+    const currentUserRole = auth.role;
+    const currentUserStaffId = auth.staffId;
+    const isOwner = currentUserRole === "owner";
 
-    // Get staff record for this user
-    const { data: staffRecord } = await supabaseAdmin
-      .from("staff")
-      .select("id, restaurant_id, role")
-      .eq("auth_user_id", user.id)
-      .eq("active", true)
-      .maybeSingle();
-
-    if (!staffRecord) {
-      return NextResponse.json(
-        { error: "No se encontró un restaurante.", no_restaurant: true },
-        { status: 404 }
-      );
-    }
-
-    const restaurantId = staffRecord.restaurant_id;
-    const currentUserRole = staffRecord.role || "waiter";
-    const currentUserStaffId = staffRecord.id;
-
-    // Fetch restaurant
     const { data: restaurant, error: restError } = await supabaseAdmin
       .from("restaurant")
       .select("*")
       .eq("id", restaurantId)
+      .is("deleted_at", null)
       .single();
 
     if (restError || !restaurant) {
       return NextResponse.json(
-        { error: "Restaurante no encontrado." },
+        { error: "Restaurante no encontrado.", no_restaurant: true },
         { status: 404 }
       );
     }
 
-    // Fetch active staff only
     const { data: rawStaff } = await supabaseAdmin
       .from("staff")
       .select("*")
@@ -56,12 +61,25 @@ export async function GET() {
       .eq("active", true)
       .order("created_at", { ascending: true });
 
-    // Strip sensitive fields (IBAN, phone, stripe IDs) for non-owners
-    const staff = currentUserRole === "owner"
-      ? rawStaff
-      : (rawStaff || []).map(({ iban, phone, stripe_payout_id, ...safe }: any) => safe);
+    const staff = isOwner
+      ? rawStaff || []
+      : ((rawStaff || []) as StaffRow[]).map((member) => ({
+          id: member.id,
+          restaurant_id: member.restaurant_id,
+          auth_user_id: member.auth_user_id,
+          name: member.name,
+          email: member.email,
+          avatar_emoji: member.avatar_emoji,
+          role: member.role,
+          stripe_payouts_enabled: member.stripe_payouts_enabled,
+          active: member.active,
+          created_at: member.created_at,
+          phone: member.id === currentUserStaffId ? member.phone : null,
+          iban: member.id === currentUserStaffId ? member.iban : null,
+          stripe_payout_id:
+            member.id === currentUserStaffId ? member.stripe_payout_id : null,
+        }));
 
-    // Fetch tips (last 50)
     const { data: tips } = await supabaseAdmin
       .from("tip")
       .select("*")
@@ -69,58 +87,70 @@ export async function GET() {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    // Fetch pending invite codes
-    const { data: pendingInvites } = await supabaseAdmin
-      .from("invite_code")
-      .select("*")
-      .eq("restaurant_id", restaurantId)
-      .eq("used", false)
-      .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false });
+    const pendingInvites = isOwner
+      ? (
+          await supabaseAdmin
+            .from("invite_code")
+            .select("id, restaurant_id, phone, name, used, expires_at, created_at")
+            .eq("restaurant_id", restaurantId)
+            .eq("used", false)
+            .gt("expires_at", new Date().toISOString())
+            .order("created_at", { ascending: false })
+        ).data || []
+      : [];
 
-    // Fetch completed distributions to subtract from available balance
-    const { data: distributions } = await supabaseAdmin
-      .from("distribution")
-      .select("total_cents")
-      .eq("restaurant_id", restaurantId)
-      .eq("status", "distributed");
+    const ledger = await getRestaurantTipLedger(restaurantId);
+    const allTips = (tips || []) as TipRow[];
+    const completedRecentTips = allTips.filter((tip) => tip.status === "completed");
 
-    // Calculate stats
-    const allTips = tips || [];
-    const completedTips = allTips.filter((t: { status: string }) => t.status === "completed");
-    const totalCents = completedTips.reduce((sum: number, t: { amount_cents: number }) => sum + t.amount_cents, 0);
-    const totalFeeCents = completedTips.reduce((sum: number, t: { platform_fee_cents?: number }) => sum + (t.platform_fee_cents || 0), 0);
-    const totalDistributed = (distributions || []).reduce((sum: number, d: { total_cents: number }) => sum + d.total_cents, 0);
-    const netCents = totalCents - totalFeeCents - totalDistributed;
-    const netCentsAllTime = totalCents - totalFeeCents;
-    const avgCents = completedTips.length > 0 ? Math.round(netCentsAllTime / completedTips.length) : 0;
-
-    // Tips this week
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
     weekStart.setHours(0, 0, 0, 0);
-    const tipsThisWeek = allTips.filter(
-      (t: { created_at: string }) => new Date(t.created_at) >= weekStart
-    );
-    const tipsThisWeekCompleted = tipsThisWeek.filter((t: { status: string }) => t.status === "completed");
-    const tipsThisWeekCents = tipsThisWeekCompleted.reduce(
-      (sum: number, t: { amount_cents: number; platform_fee_cents?: number }) =>
-        sum + t.amount_cents - (t.platform_fee_cents || 0),
+
+    const { data: weekTips } = await supabaseAdmin
+      .from("tip")
+      .select("amount_cents, platform_fee_cents, status, created_at")
+      .eq("restaurant_id", restaurantId)
+      .eq("status", "completed")
+      .gte("created_at", weekStart.toISOString());
+
+    const tipsThisWeekCents = (weekTips || []).reduce(
+      (
+        sum: number,
+        tip: { amount_cents: number; platform_fee_cents?: number | null }
+      ) => sum + tip.amount_cents - (tip.platform_fee_cents || 0),
       0
     );
 
+    const avgCents =
+      ledger.grossTipCents > 0 && completedRecentTips.length > 0
+        ? Math.round(
+            completedRecentTips.reduce(
+              (sum, tip) =>
+                sum + tip.amount_cents - (tip.platform_fee_cents || 0),
+              0
+            ) / completedRecentTips.length
+          )
+        : 0;
+
     return NextResponse.json({
-      restaurant,
-      staff: staff || [],
+      restaurant: isOwner
+        ? restaurant
+        : {
+            ...restaurant,
+            notification_email: null,
+            stripe_account_id: null,
+          },
+      staff,
       tips: allTips,
-      pendingInvites: pendingInvites || [],
+      pendingInvites,
       currentUserRole,
       currentUserStaffId,
       stats: {
-        totalCents,
-        netCents,
-        totalDistributed,
-        tipsThisWeek: tipsThisWeek.length,
+        totalCents: ledger.grossTipCents,
+        netCents: ledger.availableCents,
+        totalDistributed: ledger.allocatedCents,
+        tipsThisWeek: weekTips?.length || 0,
         tipsThisWeekCents,
         activeStaff: (staff || []).length,
         avgCents,

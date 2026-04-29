@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 
-type BadgeVariant = "active" | "pending" | "error" | "info";
+type BadgeVariant = "active" | "pending" | "error" | "info" | "neutral";
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
@@ -11,6 +11,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   pending: "bg-[#FFF3E0] text-[#E65100]",
   error: "bg-red-50 text-red-600",
   info: "bg-blue-50 text-blue-600",
+  neutral: "bg-gray-100 text-gray-600",
 };
 
 function Badge({

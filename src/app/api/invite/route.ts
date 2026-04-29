@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getWhatsAppLink } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 import { randomBytes } from "crypto";
 
@@ -11,6 +12,15 @@ function generateToken(): string {
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const { allowed } = checkRateLimit(`invite:${ip}`, 20, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas invitaciones. Espera un momento." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { restaurant_id, restaurant_name, name, phone } = body;
 
@@ -21,7 +31,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { auth, error: authError } = await requireOwner(restaurant_id);
+    const { error: authError } = await requireOwner(restaurant_id);
     if (authError) return authError;
 
     if (!name || typeof name !== "string" || name.trim().length < 2) {
@@ -66,7 +76,6 @@ export async function POST(request: Request) {
     const whatsapp_link = getWhatsAppLink(phone, message);
 
     return NextResponse.json({
-      token,
       invite_link: inviteLink,
       whatsapp_link,
     });

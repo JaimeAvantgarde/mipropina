@@ -33,7 +33,10 @@ export async function GET(request: Request) {
       .eq("stripe_payout_id", accountId)
       .maybeSingle();
 
-    if (!restaurant && !staffAccount) {
+    const canReadRestaurantAccount = Boolean(restaurant && auth.role === "owner");
+    const canReadStaffAccount = Boolean(staffAccount && staffAccount.id === auth.staffId);
+
+    if (!canReadRestaurantAccount && !canReadStaffAccount) {
       return NextResponse.json(
         { error: "No tienes acceso a esta cuenta." },
         { status: 403 }

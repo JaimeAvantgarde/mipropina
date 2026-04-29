@@ -11,6 +11,7 @@ export async function GET() {
     const { data: restaurants } = await supabaseAdmin
       .from("restaurant")
       .select("*")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     // Fetch all staff

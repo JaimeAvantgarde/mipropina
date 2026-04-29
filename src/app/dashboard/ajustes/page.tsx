@@ -328,8 +328,6 @@ export default function AjustesPage() {
     );
   }
 
-  const restaurantId = data?.restaurant?.id;
-
   return (
     <div>
       {/* Header */}
@@ -672,7 +670,7 @@ export default function AjustesPage() {
             onChange={(e) => setGoogleMapsUrl(e.target.value)}
           />
           <p className="text-xs text-gray-400 mt-2 mb-4">
-            En Google Business Profile → Inicio → "Obtener más opiniones" → copia el enlace corto
+            En Google Business Profile → Inicio → &quot;Obtener más opiniones&quot; → copia el enlace corto
           </p>
           <Button onClick={handleSaveMaps} loading={savingMaps}>
             {savedMaps ? "Guardado ✓" : "Guardar enlace"}
@@ -683,7 +681,7 @@ export default function AjustesPage() {
         <Card className="border-2 border-red-200">
           <h3 className="text-lg font-bold text-red-600 mb-2">Zona peligrosa</h3>
           <p className="text-sm text-gray-500 mb-5">
-            Al eliminar el restaurante se borran todos los datos: equipo, propinas, historial y QR. Irreversible.
+            Al eliminar el restaurante se archivará el local y se desactivará el acceso del equipo. Los datos financieros se conservan por auditoría.
           </p>
           {!showDeleteConfirm ? (
             <button

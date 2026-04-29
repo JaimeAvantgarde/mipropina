@@ -11,6 +11,7 @@ export async function GET(
     .from("restaurant")
     .select("id, name, slug, logo_emoji, logo_url, theme_color, tip_amounts, custom_amount_enabled, thank_you_message, google_maps_url, stripe_charges_enabled")
     .eq("slug", slug)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (error || !data) {

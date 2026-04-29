@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const { allowed } = checkRateLimit(`invite-validate:${ip}`, 60, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ valid: false }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
 

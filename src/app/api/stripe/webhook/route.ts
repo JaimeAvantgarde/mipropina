@@ -42,9 +42,24 @@ export async function POST(request: Request) {
         const restaurantId = paymentIntent.metadata?.restaurant_id;
         const tipCents = Number(paymentIntent.metadata?.tip_amount_cents) || paymentIntent.amount;
 
+        if (!restaurantId) {
+          throw new Error(`PaymentIntent ${paymentIntent.id} missing restaurant_id metadata`);
+        }
+
         console.log(
           `[webhook] Payment succeeded: ${paymentIntent.id} | Restaurant: ${restaurantId} | Tip: ${tipCents}`
         );
+
+        const { data: restaurantExists, error: restaurantError } = await supabaseAdmin
+          .from("restaurant")
+          .select("id")
+          .eq("id", restaurantId)
+          .is("deleted_at", null)
+          .maybeSingle();
+
+        if (restaurantError || !restaurantExists) {
+          throw new Error(`Restaurant ${restaurantId} not found for PaymentIntent ${paymentIntent.id}`);
+        }
 
         // Upsert (not insert) to make the webhook idempotent — Stripe can retry events
         const { error: tipError } = await supabaseAdmin.from("tip").upsert({
@@ -57,6 +72,7 @@ export async function POST(request: Request) {
 
         if (tipError) {
           console.error("[webhook] Error upserting tip:", tipError);
+          throw new Error(`Failed to persist tip for PaymentIntent ${paymentIntent.id}`);
         }
 
         if (restaurantId) {
@@ -92,14 +108,23 @@ export async function POST(request: Request) {
               const totalTodayCents = (todayTips || []).reduce(
                 (sum: number, t: { amount_cents: number; platform_fee_cents: number }) =>
                   sum + t.amount_cents - (t.platform_fee_cents || 0),
-                tipCents - calculatePlatformFee(tipCents)
+                0
               );
 
               // Get owner email if no override
               let toEmail: string | null = rest.notification_email;
               if (!toEmail && rest.owner_id) {
-                const { data: ownerUser } = await supabaseAdmin.auth.admin.getUserById(rest.owner_id);
-                toEmail = ownerUser?.user?.email ?? null;
+                const { data: ownerStaff } = await supabaseAdmin
+                  .from("staff")
+                  .select("auth_user_id, email")
+                  .eq("id", rest.owner_id)
+                  .maybeSingle();
+                if (ownerStaff?.auth_user_id) {
+                  const { data: ownerUser } = await supabaseAdmin.auth.admin.getUserById(ownerStaff.auth_user_id);
+                  toEmail = ownerUser?.user?.email ?? ownerStaff.email ?? null;
+                } else {
+                  toEmail = ownerStaff?.email ?? null;
+                }
               }
 
               if (toEmail) {
@@ -135,12 +160,16 @@ export async function POST(request: Request) {
         console.log(`[webhook] Charge refunded: ${charge.id} | PI: ${paymentIntentId} | full=${isFullRefund} | refunded=${charge.amount_refunded}/${charge.amount}`);
 
         if (paymentIntentId) {
-          await supabaseAdmin
+          const { data: refundedTip, error: refundUpdateError } = await supabaseAdmin
             .from("tip")
             .update({ status: isFullRefund ? "refunded" : "completed" })
-            .eq("stripe_payment_id", paymentIntentId);
+            .eq("stripe_payment_id", paymentIntentId)
+            .select("restaurant_id")
+            .maybeSingle();
 
-          const restaurantId = charge.metadata?.restaurant_id;
+          if (refundUpdateError) throw refundUpdateError;
+
+          const restaurantId = refundedTip?.restaurant_id || charge.metadata?.restaurant_id;
           if (restaurantId) {
             sendPushToRestaurant(restaurantId, {
               title: "Propina reembolsada",
@@ -168,13 +197,14 @@ export async function POST(request: Request) {
           .maybeSingle();
 
         if (restaurant) {
-          await supabaseAdmin
+          const { error: updateError } = await supabaseAdmin
             .from("restaurant")
             .update({
               stripe_charges_enabled: account.charges_enabled,
               stripe_payouts_enabled: account.payouts_enabled,
             })
             .eq("id", restaurant.id);
+          if (updateError) throw updateError;
         }
 
         // Update staff if this is a waiter's payout account
@@ -185,12 +215,13 @@ export async function POST(request: Request) {
           .maybeSingle();
 
         if (staffMember) {
-          await supabaseAdmin
+          const { error: updateError } = await supabaseAdmin
             .from("staff")
             .update({
               stripe_payouts_enabled: account.payouts_enabled,
             })
             .eq("id", staffMember.id);
+          if (updateError) throw updateError;
 
           if (account.payouts_enabled && account.details_submitted) {
             sendPushToRestaurant(staffMember.restaurant_id, {
@@ -209,6 +240,10 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("[webhook] Error processing event:", error);
+    return NextResponse.json(
+      { error: "Webhook processing failed." },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ received: true });

@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       .from("restaurant")
       .select("id, stripe_charges_enabled")
       .eq("id", restaurant_id)
+      .is("deleted_at", null)
       .maybeSingle();
 
     if (!restaurant) {
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!amount_cents || typeof amount_cents !== "number" || amount_cents < 50) {
+    if (!Number.isInteger(amount_cents) || amount_cents < 50) {
       return NextResponse.json(
         { error: "El importe mínimo es 0,50 €." },
         { status: 400 }

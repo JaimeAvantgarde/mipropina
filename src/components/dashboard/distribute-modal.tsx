@@ -108,7 +108,6 @@ function DistributeModal({ open, onClose, totalCents, staff, restaurantId }: Dis
   };
 
   const amounts = getAmounts();
-  const totalDistributed = Object.values(amounts).reduce((a, b) => a + b, 0);
   const percentagesValid = Math.abs(totalPercentage - 100) < 0.01;
   const isValid = selectedCount > 0 && (method === "equal" || percentagesValid);
 

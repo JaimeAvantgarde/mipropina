@@ -16,7 +16,6 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data, loading, isUsingMock, refetch } = useDashboardData();
   const [user, setUser] = useState<{ email: string; name: string } | null>(null);
-  const [noRestaurant, setNoRestaurant] = useState(false);
 
   useEffect(() => {
     async function getUser() {
@@ -32,14 +31,7 @@ export default function DashboardLayout({
     getUser();
   }, []);
 
-  // Check if dashboard data came back with no restaurant
-  useEffect(() => {
-    if (!loading && !data?.restaurant?.id) {
-      setNoRestaurant(true);
-    } else if (data?.restaurant?.id) {
-      setNoRestaurant(false);
-    }
-  }, [loading, data]);
+  const noRestaurant = !loading && !data?.restaurant?.id;
 
   // Show create restaurant flow if user has no restaurant
   if (noRestaurant && !isUsingMock && user) {

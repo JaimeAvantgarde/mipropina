@@ -26,11 +26,19 @@ export async function POST(request: Request) {
       );
     }
 
+    const cleanSlug = slug.trim().toLowerCase();
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(cleanSlug)) {
+      return NextResponse.json(
+        { error: "La URL solo puede contener letras, números y guiones." },
+        { status: 400 }
+      );
+    }
+
     // Check if slug is already taken
     const { data: existingSlug } = await supabaseAdmin
       .from("restaurant")
       .select("id")
-      .eq("slug", slug.trim())
+      .eq("slug", cleanSlug)
       .maybeSingle();
 
     if (existingSlug) {
@@ -45,7 +53,7 @@ export async function POST(request: Request) {
       .from("restaurant")
       .insert({
         name: name.trim(),
-        slug: slug.trim(),
+        slug: cleanSlug,
         logo_emoji: logo_emoji || "🍽️",
         theme_color: "#2ECC87",
       })
@@ -96,7 +104,7 @@ export async function POST(request: Request) {
     await supabaseAdmin.from("qr_code").insert({
       restaurant_id: restaurant.id,
       table_label: "Mesa 1",
-      url: `${appUrl}/t/${slug.trim()}?mesa=1`,
+      url: `${appUrl}/t/${cleanSlug}?mesa=1`,
     });
 
     return NextResponse.json({

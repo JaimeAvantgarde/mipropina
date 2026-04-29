@@ -17,6 +17,7 @@ export async function GET(
       .from("restaurant")
       .select("*")
       .eq("slug", slug)
+      .is("deleted_at", null)
       .single();
 
     if (!restaurant) {

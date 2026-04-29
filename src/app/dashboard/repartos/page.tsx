@@ -33,13 +33,14 @@ export default function RepartosPage() {
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const restaurantId = data?.restaurant?.id;
 
   useEffect(() => {
-    if (!data?.restaurant?.id) return;
+    if (!restaurantId) return;
 
     async function fetchDistributions() {
       try {
-        const res = await fetch(`/api/distributions?restaurant_id=${data!.restaurant.id}`);
+        const res = await fetch(`/api/distributions?restaurant_id=${restaurantId}`);
         if (res.ok) {
           const json = await res.json();
           setDistributions(json.distributions || []);
@@ -52,7 +53,7 @@ export default function RepartosPage() {
       }
     }
     fetchDistributions();
-  }, [data?.restaurant?.id]);
+  }, [restaurantId]);
 
   if (loading || loadingData) {
     return (

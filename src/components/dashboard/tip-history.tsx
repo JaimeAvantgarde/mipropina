@@ -6,10 +6,11 @@ interface TipHistoryProps {
   tips: Tip[];
 }
 
-const statusConfig: Record<string, { label: string; variant: "active" | "pending" | "error" }> = {
+const statusConfig: Record<string, { label: string; variant: "active" | "pending" | "error" | "neutral" }> = {
   completed: { label: "Completada", variant: "active" },
   pending: { label: "Pendiente", variant: "pending" },
   failed: { label: "Fallida", variant: "error" },
+  refunded: { label: "Reembolsada", variant: "neutral" },
 };
 
 function TipHistory({ tips }: TipHistoryProps) {

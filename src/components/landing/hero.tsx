@@ -119,8 +119,6 @@ function PhoneMockup() {
     return () => clearInterval(id);
   }, []);
 
-  const Screen = screens[step];
-
   return (
     <div className="relative mx-auto w-[260px] sm:w-[280px]">
       {/* Phone frame */}

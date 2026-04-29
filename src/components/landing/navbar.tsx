@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -35,11 +36,11 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between md:h-20">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <span className="font-[family-name:var(--font-serif)] text-xl text-white md:text-2xl">
               mi<span className="text-primary">propina</span>
             </span>
-          </a>
+          </Link>
 
           {/* Desktop nav */}
           <div className="hidden items-center gap-8 md:flex">
@@ -52,18 +53,18 @@ export default function Navbar() {
                 {link.label}
               </a>
             ))}
-            <a
+            <Link
               href="/auth/login"
               className="text-sm font-medium text-white/70 transition-colors hover:text-white"
             >
               Acceder
-            </a>
-            <a
+            </Link>
+            <Link
               href="/auth/registro-restaurante"
               className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-dark transition-all hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(46,204,135,0.3)]"
             >
               Empieza gratis
-            </a>
+            </Link>
           </div>
 
           {/* Mobile hamburger */}
@@ -111,20 +112,20 @@ export default function Navbar() {
             </a>
           ))}
           <div className="mt-4 flex flex-col items-center gap-4">
-            <a
+            <Link
               href="/auth/login"
               onClick={() => setMobileOpen(false)}
               className="text-lg font-medium text-white/70 transition-colors hover:text-white"
             >
               Acceder
-            </a>
-            <a
+            </Link>
+            <Link
               href="/auth/registro-restaurante"
               onClick={() => setMobileOpen(false)}
               className="rounded-full bg-primary px-8 py-3 text-lg font-semibold text-dark transition-all hover:bg-primary/90"
             >
               Empieza gratis
-            </a>
+            </Link>
           </div>
         </div>
       </div>

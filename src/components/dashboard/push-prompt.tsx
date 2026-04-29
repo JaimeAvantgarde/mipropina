@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -16,19 +16,17 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export function PushPrompt() {
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
-  const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(() => {
+    if (typeof window === "undefined") return "default";
     if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-      setPermission("unsupported");
-      return;
+      return "unsupported";
     }
-    setPermission(Notification.permission);
-    if (localStorage.getItem("push-prompt-dismissed")) {
-      setDismissed(true);
-    }
-  }, []);
+    return Notification.permission;
+  });
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(localStorage.getItem("push-prompt-dismissed"));
+  });
 
   async function subscribe() {
     try {
