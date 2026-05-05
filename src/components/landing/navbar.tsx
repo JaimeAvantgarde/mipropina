@@ -40,7 +40,7 @@ export default function Navbar() {
             <img
               src="/logos/mipropina-logo-verde.svg"
               alt="mipropina"
-              className="h-14 w-auto rounded-lg md:h-16"
+              className="h-14 w-auto md:h-16"
             />
           </Link>
 

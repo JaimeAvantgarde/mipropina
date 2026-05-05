@@ -42,7 +42,7 @@ export default function Footer() {
             <img
               src="/logos/mipropina-logo-burdeos.svg"
               alt="mipropina"
-              className="h-20 w-auto rounded-lg"
+              className="h-20 w-auto"
             />
             <p className="mt-3 text-sm leading-relaxed text-white/40">
               La forma más fácil de gestionar propinas digitales en tu negocio.
