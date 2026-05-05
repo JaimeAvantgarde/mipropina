@@ -11,8 +11,12 @@ export default function CookiesPage() {
       {/* Nav */}
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
-          <Link href="/" className="font-[family-name:var(--font-serif)] text-xl" style={{ color: "#0D1B1E" }}>
-            mi<span style={{ color: "#2ECC87" }}>propina</span>
+          <Link href="/" aria-label="mipropina">
+            <img
+              src="/logos/mipropina-logo-verde-transparente.svg"
+              alt="mipropina"
+              className="h-12 w-auto"
+            />
           </Link>
           <Link href="/" className="text-sm hover:underline" style={{ color: "#0D1B1E" }}>
             Volver al inicio

@@ -38,10 +38,12 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen bg-[#F5FAF7]">
         {/* Simple top bar */}
-        <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-          <span className="font-[family-name:var(--font-serif)] text-xl text-[#0D1B1E]">
-            mi<span className="text-[#2ECC87]">propina</span>
-          </span>
+        <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
+          <img
+            src="/logos/mipropina-logo-verde-transparente.svg"
+            alt="mipropina"
+            className="h-14 w-auto"
+          />
           <span className="text-sm text-gray-500">{user.email}</span>
         </div>
         <div className="p-6">
@@ -88,9 +90,11 @@ export default function DashboardLayout({
               <line x1="0" y1="14" x2="20" y2="14" />
             </svg>
           </button>
-          <h1 className="text-lg font-[family-name:var(--font-serif)] text-[#0D1B1E]">
-            mipropina
-          </h1>
+          <img
+            src="/logos/mipropina-logo-verde-transparente.svg"
+            alt="mipropina"
+            className="h-10 w-auto"
+          />
           <div className="w-10" />
         </div>
 

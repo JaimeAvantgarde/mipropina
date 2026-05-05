@@ -36,10 +36,12 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-[family-name:var(--font-serif)] text-xl text-white md:text-2xl">
-              mi<span className="text-primary">propina</span>
-            </span>
+          <Link href="/" className="flex items-center" aria-label="mipropina">
+            <img
+              src="/logos/mipropina-logo-verde.svg"
+              alt="mipropina"
+              className="h-14 w-auto rounded-lg md:h-16"
+            />
           </Link>
 
           {/* Desktop nav */}

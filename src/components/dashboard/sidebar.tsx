@@ -70,11 +70,13 @@ function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurant
         )}
       >
         {/* Logo */}
-        <div className="px-6 pt-8 pb-2 mb-8">
-          <Link href="/dashboard" className="block">
-            <h1 className="text-2xl text-white font-[family-name:var(--font-serif)]">
-              mipropina
-            </h1>
+        <div className="px-4 pt-4 pb-0 mb-4">
+          <Link href="/dashboard" className="block" aria-label="mipropina">
+            <img
+              src="/logos/mipropina-logo-blanco.svg"
+              alt="mipropina"
+              className="h-24 w-auto"
+            />
           </Link>
         </div>
 

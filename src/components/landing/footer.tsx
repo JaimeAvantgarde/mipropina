@@ -39,9 +39,11 @@ export default function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <span className="font-[family-name:var(--font-serif)] text-2xl text-white">
-              mi<span className="text-primary">propina</span>
-            </span>
+            <img
+              src="/logos/mipropina-logo-burdeos.svg"
+              alt="mipropina"
+              className="h-20 w-auto rounded-lg"
+            />
             <p className="mt-3 text-sm leading-relaxed text-white/40">
               La forma más fácil de gestionar propinas digitales en tu negocio.
             </p>

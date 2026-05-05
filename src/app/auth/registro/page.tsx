@@ -239,11 +239,13 @@ export default function RegistroPage() {
     <div className="min-h-screen bg-[#F5FAF7] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/">
-            <span className="font-[family-name:var(--font-serif)] text-3xl text-[#0D1B1E]">
-              mi<span className="text-[#2ECC87]">propina</span>
-            </span>
+        <div className="flex justify-center mb-8">
+          <Link href="/" aria-label="mipropina">
+            <img
+              src="/logos/mipropina-logo-verde-transparente.svg"
+              alt="mipropina"
+              className="h-24 w-auto"
+            />
           </Link>
         </div>
 
