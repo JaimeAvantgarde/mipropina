@@ -16,16 +16,18 @@ interface SidebarProps {
 }
 
 const ownerNavItems = [
-  { emoji: "\uD83D\uDCCA", label: "Vista general", href: "/dashboard" },
-  { emoji: "\uD83D\uDC65", label: "Equipo", href: "/dashboard/equipo" },
-  { emoji: "\uD83D\uDCCB", label: "Repartos", href: "/dashboard/repartos" },
-  { emoji: "\uD83D\uDC64", label: "Mi perfil", href: "/dashboard/perfil" },
-  { emoji: "\u2699\uFE0F", label: "Ajustes", href: "/dashboard/ajustes" },
+  { emoji: "📊", label: "Vista general", href: "/dashboard" },
+  { emoji: "👥", label: "Equipo", href: "/dashboard/equipo" },
+  { emoji: "📋", label: "Repartos", href: "/dashboard/repartos" },
+  { emoji: "👤", label: "Mi perfil", href: "/dashboard/perfil" },
+  { emoji: "⚙️", label: "Ajustes", href: "/dashboard/ajustes" },
 ];
 
 const waiterNavItems = [
-  { emoji: "\uD83D\uDC64", label: "Mi perfil", href: "/dashboard/perfil" },
-  { emoji: "\uD83D\uDC65", label: "Equipo", href: "/dashboard/equipo" },
+  { emoji: "📊", label: "Vista general", href: "/dashboard" },
+  { emoji: "📋", label: "Repartos", href: "/dashboard/repartos" },
+  { emoji: "👥", label: "Equipo", href: "/dashboard/equipo" },
+  { emoji: "👤", label: "Mi perfil", href: "/dashboard/perfil" },
 ];
 
 function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurantLogoUrl, staffRole }: SidebarProps) {
@@ -114,7 +116,7 @@ function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurant
               </div>
             ) : (
               <div className="w-10 h-10 rounded-full bg-[#2ECC87]/20 flex items-center justify-center text-lg">
-                {restaurantEmoji || "\uD83C\uDF7D\uFE0F"}
+                {restaurantEmoji || "🍽️"}
               </div>
             )}
             <div>

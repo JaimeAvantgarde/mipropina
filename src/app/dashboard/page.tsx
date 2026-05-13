@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/utils";
 import { useDashboard } from "@/lib/dashboard-context";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -68,14 +67,21 @@ function AvgIcon() {
 export default function DashboardPage() {
   const [distributeOpen, setDistributeOpen] = useState(false);
   const { data, loading } = useDashboard();
-  const router = useRouter();
+  const [myPayouts, setMyPayouts] = useState<{ totalCents: number; weekCents: number } | null>(null);
 
-  // Waiters have no business on the manager dashboard — send them to their profile
+  const isWaiter = data?.currentUserRole === "waiter";
+
   useEffect(() => {
-    if (!loading && data && data.currentUserRole === "waiter") {
-      router.replace("/dashboard/perfil");
-    }
-  }, [loading, data, router]);
+    if (!isWaiter) return;
+    fetch("/api/staff/my-payouts")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.totalCents !== undefined) {
+          setMyPayouts({ totalCents: json.totalCents, weekCents: json.weekCents });
+        }
+      })
+      .catch(() => {});
+  }, [isWaiter]);
 
   if (loading) {
     return (
@@ -108,6 +114,8 @@ export default function DashboardPage() {
   const activeStaff = staff.filter((s) => s.active);
   const hasTips = tips.length > 0;
   const hasStaff = staff.length > 1;
+  const myWeekCents = myPayouts?.weekCents ?? 0;
+  const myTotalCents = myPayouts?.totalCents ?? 0;
 
   return (
     <div>
@@ -136,10 +144,27 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* Personal summary for waiters */}
+      {!isOwner && (
+        <div className="mb-8 rounded-2xl bg-gradient-to-r from-[#0D1B1E] to-[#1a3530] p-6 text-white">
+          <p className="text-sm font-medium text-white/60">Tu acumulado</p>
+          <div className="mt-3 grid grid-cols-2 gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-white/40">Esta semana</p>
+              <p className="mt-1 text-3xl font-bold">{formatCents(myWeekCents)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-white/40">Total cobrado</p>
+              <p className="mt-1 text-3xl font-bold">{formatCents(myTotalCents)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          label="Disponible para repartir"
+          label={isOwner ? "Disponible para repartir" : "Bote del restaurante"}
           value={formatCents(stats.netCents ?? 0)}
           subtitle={`${tips.filter(t => t.status === "completed").length} propina${tips.filter(t => t.status === "completed").length !== 1 ? "s" : ""} completada${tips.filter(t => t.status === "completed").length !== 1 ? "s" : ""}`}
           icon={<CoinsIcon />}
