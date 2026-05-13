@@ -21,7 +21,6 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
   );
 
   const [mode, setMode] = useState<Mode>(hasCustomConfig ? "custom" : "equal");
-  const [includeOwner, setIncludeOwner] = useState<boolean>(!!restaurant.split_includes_owner);
   const [shares, setShares] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -29,7 +28,6 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
 
   useEffect(() => {
     setMode(hasCustomConfig ? "custom" : "equal");
-    setIncludeOwner(!!restaurant.split_includes_owner);
 
     const initial: Record<string, string> = {};
     for (const s of activeStaff) {
@@ -39,12 +37,10 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
           : "";
     }
     setShares(initial);
-  }, [restaurant.split_includes_owner, activeStaff, hasCustomConfig]);
+  }, [activeStaff, hasCustomConfig]);
 
-  const eligibleStaff = useMemo(
-    () => activeStaff.filter((s) => includeOwner || s.role !== "owner"),
-    [activeStaff, includeOwner]
-  );
+  // Gerente siempre incluido en el reparto.
+  const eligibleStaff = activeStaff;
 
   // Auto-equal: when the gerente flips to "equitativo" or toggles owner inclusion,
   // reset all shares to an even split across eligibleStaff.
@@ -96,7 +92,7 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           restaurant_id: restaurant.id,
-          split_includes_owner: includeOwner,
+          split_includes_owner: true,
           shares: payloadShares,
         }),
       });
@@ -145,17 +141,6 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
         </button>
       </div>
 
-      {/* Include owner */}
-      <label className="flex items-center gap-3 mb-5 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={includeOwner}
-          onChange={(e) => setIncludeOwner(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 text-[#2ECC87] focus:ring-[#2ECC87] cursor-pointer"
-        />
-        <span className="text-sm text-[#0D1B1E]">Incluir al gerente en el reparto</span>
-      </label>
-
       {/* Staff list */}
       <div className="border border-gray-100 rounded-xl overflow-hidden">
         <table className="w-full">
@@ -167,13 +152,9 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
           </thead>
           <tbody>
             {activeStaff.map((s) => {
-              const eligible = includeOwner || s.role !== "owner";
               const equalPart = eligibleStaff.length > 0 ? 100 / eligibleStaff.length : 0;
               return (
-                <tr
-                  key={s.id}
-                  className={`border-t border-gray-50 ${!eligible ? "opacity-40" : ""}`}
-                >
+                <tr key={s.id} className="border-t border-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{s.avatar_emoji}</span>
@@ -188,9 +169,7 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {!eligible ? (
-                      <span className="text-sm text-gray-400">—</span>
-                    ) : mode === "custom" ? (
+                    {mode === "custom" ? (
                       <div className="flex items-center justify-end gap-1">
                         <input
                           type="number"

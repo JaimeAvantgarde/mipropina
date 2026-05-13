@@ -119,11 +119,8 @@ export default function DashboardPage() {
 
   // Estimated share of the current pot for the logged-in waiter.
   // Custom split: use staff.default_share_pct.
-  // Otherwise: equal split across eligible staff (owner included only if configured).
+  // Otherwise: equal split across all active staff (owner included).
   const currentStaff = staff.find((s) => s.id === currentUserStaffId) || null;
-  const eligibleStaff = activeStaff.filter(
-    (s) => restaurant.split_includes_owner || s.role !== "owner"
-  );
   const customConfigured = activeStaff.some(
     (s) => s.default_share_pct !== null && s.default_share_pct !== undefined
   );
@@ -134,13 +131,12 @@ export default function DashboardPage() {
       const pct = currentStaff.default_share_pct ?? 0;
       return Math.round(pot * (pct / 100));
     }
-    if (!restaurant.split_includes_owner && currentStaff.role === "owner") return 0;
-    return eligibleStaff.length > 0 ? Math.floor(pot / eligibleStaff.length) : 0;
+    return activeStaff.length > 0 ? Math.floor(pot / activeStaff.length) : 0;
   })();
   const myShareLabel = customConfigured
     ? `${currentStaff?.default_share_pct ?? 0}% del bote`
-    : eligibleStaff.length > 0
-    ? `Reparto a partes iguales entre ${eligibleStaff.length}`
+    : activeStaff.length > 0
+    ? `Reparto a partes iguales entre ${activeStaff.length}`
     : "Sin reparto configurado";
 
   return (
