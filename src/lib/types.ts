@@ -15,6 +15,7 @@ export type Restaurant = {
   email_notifications_enabled: boolean;
   notification_email: string | null;
   google_maps_url: string | null;
+  split_includes_owner: boolean;
   created_at: string;
   deleted_at: string | null;
 };
@@ -34,6 +35,7 @@ export type Staff = {
   stripe_payout_id: string | null;
   stripe_payouts_enabled: boolean;
   active: boolean;
+  default_share_pct: number | null;
   created_at: string;
 };
 

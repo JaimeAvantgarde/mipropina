@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SplitConfigCard } from "@/components/dashboard/split-config-card";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -605,6 +606,15 @@ export default function AjustesPage() {
             </a>
           </div>
         </Card>
+
+        {/* Reparto por defecto */}
+        {data?.restaurant && data?.staff && (
+          <SplitConfigCard
+            restaurant={data.restaurant}
+            staff={data.staff}
+            onSaved={refetch}
+          />
+        )}
 
         {/* Stripe Connect */}
         <Card>

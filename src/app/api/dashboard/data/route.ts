@@ -16,6 +16,7 @@ type StaffRow = {
   stripe_payout_id: string | null;
   stripe_payouts_enabled: boolean;
   active: boolean;
+  default_share_pct: number | null;
   created_at: string;
 };
 
@@ -73,6 +74,7 @@ export async function GET() {
           role: member.role,
           stripe_payouts_enabled: member.stripe_payouts_enabled,
           active: member.active,
+          default_share_pct: member.default_share_pct,
           created_at: member.created_at,
           phone: member.id === currentUserStaffId ? member.phone : null,
           iban: member.id === currentUserStaffId ? member.iban : null,

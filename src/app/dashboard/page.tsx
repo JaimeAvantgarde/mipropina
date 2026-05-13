@@ -109,13 +109,39 @@ export default function DashboardPage() {
 
   if (!data) return null;
 
-  const { restaurant, tips, staff, stats, currentUserRole } = data;
+  const { restaurant, tips, staff, stats, currentUserRole, currentUserStaffId } = data;
   const isOwner = currentUserRole === "owner";
   const activeStaff = staff.filter((s) => s.active);
   const hasTips = tips.length > 0;
   const hasStaff = staff.length > 1;
   const myWeekCents = myPayouts?.weekCents ?? 0;
   const myTotalCents = myPayouts?.totalCents ?? 0;
+
+  // Estimated share of the current pot for the logged-in waiter.
+  // Custom split: use staff.default_share_pct.
+  // Otherwise: equal split across eligible staff (owner included only if configured).
+  const currentStaff = staff.find((s) => s.id === currentUserStaffId) || null;
+  const eligibleStaff = activeStaff.filter(
+    (s) => restaurant.split_includes_owner || s.role !== "owner"
+  );
+  const customConfigured = activeStaff.some(
+    (s) => s.default_share_pct !== null && s.default_share_pct !== undefined
+  );
+  const myShareEstimateCents = (() => {
+    const pot = stats.netCents ?? 0;
+    if (pot <= 0 || !currentStaff) return 0;
+    if (customConfigured) {
+      const pct = currentStaff.default_share_pct ?? 0;
+      return Math.round(pot * (pct / 100));
+    }
+    if (!restaurant.split_includes_owner && currentStaff.role === "owner") return 0;
+    return eligibleStaff.length > 0 ? Math.floor(pot / eligibleStaff.length) : 0;
+  })();
+  const myShareLabel = customConfigured
+    ? `${currentStaff?.default_share_pct ?? 0}% del bote`
+    : eligibleStaff.length > 0
+    ? `Reparto a partes iguales entre ${eligibleStaff.length}`
+    : "Sin reparto configurado";
 
   return (
     <div>
@@ -147,15 +173,21 @@ export default function DashboardPage() {
       {/* Personal summary for waiters */}
       {!isOwner && (
         <div className="mb-8 rounded-2xl bg-gradient-to-r from-[#0D1B1E] to-[#1a3530] p-6 text-white">
-          <p className="text-sm font-medium text-white/60">Tu acumulado</p>
-          <div className="mt-3 grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-white/40">Tu parte del bote</p>
+              <p className="mt-1 text-3xl font-bold">{formatCents(myShareEstimateCents)}</p>
+              <p className="mt-1 text-[11px] text-white/40">{myShareLabel}</p>
+            </div>
             <div>
               <p className="text-xs uppercase tracking-wider text-white/40">Esta semana</p>
               <p className="mt-1 text-3xl font-bold">{formatCents(myWeekCents)}</p>
+              <p className="mt-1 text-[11px] text-white/40">Cobrado</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wider text-white/40">Total cobrado</p>
               <p className="mt-1 text-3xl font-bold">{formatCents(myTotalCents)}</p>
+              <p className="mt-1 text-[11px] text-white/40">Histórico</p>
             </div>
           </div>
         </div>
