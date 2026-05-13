@@ -8,6 +8,9 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Required for Chrome on Android to consider the PWA installable.
+self.addEventListener("fetch", () => {});
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
