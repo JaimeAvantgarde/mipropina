@@ -1,37 +1,69 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import QRCodeLib from "qrcode";
+
+const SAMPLE_TIP_URL = "https://mipropina.es/t/la-tasca-de-maria?mesa=Mesa%204";
+
+function SampleQRCode({ className = "", width = 320 }: { className?: string; width?: number }) {
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    QRCodeLib.toDataURL(SAMPLE_TIP_URL, {
+      width,
+      margin: 2,
+      color: { dark: "#0D1B1E", light: "#FFFFFF" },
+    })
+      .then(setQrDataUrl)
+      .catch(() => {});
+  }, [width]);
+
+  if (!qrDataUrl) {
+    return <div className={`animate-pulse rounded-2xl bg-gray-100 ${className}`} />;
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={qrDataUrl}
+      alt="QR de ejemplo para dejar propina en La Tasca de Maria, Mesa 4"
+      className={className}
+    />
+  );
+}
 
 /* ------------------------------------------------------------------ */
-/*  Phone Demo – 3 pantallas animadas                                  */
+/*  Phone demo                                                         */
 /* ------------------------------------------------------------------ */
 
 function ScreenScan() {
   return (
-    <div className="flex flex-col items-center justify-center px-5 py-6">
-      {/* QR icon */}
-      <div className="mb-4 flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-dashed border-[#2ECC87]/40 bg-[#2ECC87]/5">
-        <svg
-          className="h-16 w-16 text-[#2ECC87]"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M13.5 14.625v2.25m0 3.375h3.375m-3.375 0v-3.375m0 0h3.375m0 0v3.375m0-3.375h2.25m-2.25 0v-2.25"
-          />
-        </svg>
+    <div className="flex h-full flex-col px-5 py-5">
+      <div className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-gray-900/5">
+        <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0D1B1E] text-lg font-bold text-[#2ECC87]">
+            M
+          </div>
+          <div>
+            <p className="text-[13px] font-bold text-gray-900">La Tasca de Mar&iacute;a</p>
+            <p className="text-[11px] text-gray-400">Mesa 4</p>
+          </div>
+        </div>
+        <div className="pt-5 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+            QR real de mesa
+          </p>
+          <SampleQRCode className="mx-auto mt-3 h-36 w-36 rounded-2xl" width={260} />
+          <p className="mt-3 text-[11px] leading-relaxed text-gray-500">
+            Escaneado con la c&aacute;mara del m&oacute;vil. Sin app, sin registro.
+          </p>
+        </div>
       </div>
-      <p className="text-sm font-bold text-gray-800">Escanea el QR de tu mesa</p>
-      <p className="mt-1 text-xs text-gray-400">La Tasca de Mar&iacute;a</p>
+
+      <div className="mt-auto rounded-2xl bg-[#EAFBF3] px-4 py-3">
+        <p className="text-[11px] font-semibold text-[#0D1B1E]">Siguiente paso</p>
+        <p className="mt-1 text-[12px] text-[#1A3C34]/70">Elegir importe y pagar con Stripe.</p>
+      </div>
     </div>
   );
 }
@@ -41,27 +73,34 @@ function ScreenChoose() {
   const selected = 5;
 
   return (
-    <div className="px-5 py-4">
-      {/* Restaurant mini header */}
-      <div className="mb-3 text-center">
-        <p className="text-[13px] font-bold text-gray-800">La Tasca de Mar&iacute;a</p>
-        <p className="text-[10px] text-gray-400">Mesa 4</p>
+    <div className="flex h-full flex-col px-5 py-5">
+      <div className="mb-5 rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-gray-900/5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0D1B1E] text-lg font-bold text-[#2ECC87]">
+            M
+          </div>
+          <div>
+            <p className="text-[13px] font-bold text-gray-900">La Tasca de Mar&iacute;a</p>
+            <p className="text-[11px] text-gray-400">Mesa 4</p>
+          </div>
+          <span className="ml-auto rounded-full bg-[#EAFBF3] px-2.5 py-1 text-[10px] font-bold text-[#1A3C34]">
+            Abierto
+          </span>
+        </div>
       </div>
 
-      {/* Label */}
-      <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+      <p className="mb-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-gray-400">
         Elige la propina
       </p>
 
-      {/* Amount grid */}
-      <div className="mb-3 grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-2 gap-2.5">
         {amounts.map((a) => (
           <div
             key={a}
-            className={`rounded-xl py-2 text-center text-xs font-bold transition-all ${
+            className={`rounded-2xl py-4 text-center text-base font-bold transition-all ${
               a === selected
-                ? "bg-[#2ECC87] text-white shadow-[0_4px_12px_rgba(46,204,135,0.35)] scale-105"
-                : "bg-white text-gray-600 shadow-sm"
+                ? "scale-[1.02] bg-[#2ECC87] text-[#0D1B1E] shadow-[0_14px_28px_rgba(46,204,135,0.25)]"
+                : "bg-white text-gray-700 shadow-sm ring-1 ring-gray-900/5"
             }`}
           >
             {a}&euro;
@@ -69,15 +108,25 @@ function ScreenChoose() {
         ))}
       </div>
 
-      {/* Custom amount */}
-      <div className="mb-3 flex items-center rounded-xl bg-white px-3 py-2 shadow-sm">
-        <span className="text-[11px] text-gray-400">Otra cantidad:</span>
-        <span className="ml-auto text-[11px] font-bold text-gray-300">0,00 &euro;</span>
+      <div className="mt-3 flex items-center rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-gray-900/5">
+        <span className="text-[12px] text-gray-500">Otra cantidad</span>
+        <span className="ml-auto text-[12px] font-bold text-gray-300">0,00 &euro;</span>
       </div>
 
-      {/* Pay button */}
-      <div className="rounded-2xl bg-[#2ECC87] py-3 text-center text-xs font-bold text-white shadow-[0_6px_20px_rgba(46,204,135,0.4)]">
-        Dejar propina &middot; 5,00 &euro;
+      <div className="mt-auto rounded-2xl bg-[#0D1B1E] px-4 py-3">
+        <div className="flex items-center justify-between text-[12px] text-white/60">
+          <span>Propina</span>
+          <span>5,00 &euro;</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[12px] text-white/60">
+          <span>Coste de servicio</span>
+          <span>0,20 &euro;</span>
+        </div>
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <div className="rounded-2xl bg-[#2ECC87] py-3 text-center text-sm font-bold text-[#0D1B1E] shadow-[0_12px_24px_rgba(46,204,135,0.35)]">
+            Dejar propina &middot; 5,20 &euro;
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -85,11 +134,10 @@ function ScreenChoose() {
 
 function ScreenDone() {
   return (
-    <div className="flex flex-col items-center justify-center px-5 py-8">
-      {/* Animated check */}
-      <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#2ECC87]/15 animate-[scaleIn_0.5s_ease-out]">
+    <div className="flex h-full flex-col items-center justify-center px-5 py-8 text-center">
+      <div className="mb-5 flex h-24 w-24 animate-[scaleIn_0.5s_ease-out] items-center justify-center rounded-full bg-[#2ECC87]/15">
         <svg
-          className="h-10 w-10 text-[#2ECC87]"
+          className="h-12 w-12 text-[#2ECC87]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -98,10 +146,17 @@ function ScreenDone() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
         </svg>
       </div>
-      <p className="text-sm font-bold text-gray-800">&iexcl;Gracias por tu propina!</p>
-      <p className="mt-1.5 text-center text-xs leading-relaxed text-gray-400">
-        El equipo de La Tasca<br />te lo agradece
+      <p className="text-lg font-bold text-gray-900">&iexcl;Gracias por tu propina!</p>
+      <p className="mt-2 max-w-[210px] text-sm leading-relaxed text-gray-500">
+        El equipo de La Tasca de Mar&iacute;a la ha recibido correctamente.
       </p>
+      <div className="mt-7 w-full rounded-2xl bg-white p-4 text-left shadow-sm ring-1 ring-gray-900/5">
+        <div className="flex items-center justify-between text-sm font-bold text-gray-900">
+          <span>Total pagado</span>
+          <span>5,20 &euro;</span>
+        </div>
+        <p className="mt-1 text-[11px] text-gray-400">Pago seguro procesado por Stripe</p>
+      </div>
     </div>
   );
 }
@@ -120,19 +175,15 @@ function PhoneMockup() {
   }, []);
 
   return (
-    <div className="relative mx-auto w-[260px] sm:w-[280px]">
-      {/* Phone frame */}
-      <div className="rounded-[2.5rem] border-[6px] border-white/10 bg-[#111] p-2 shadow-2xl">
-        {/* Notch */}
+    <div className="relative mx-auto w-[calc(100vw-48px)] max-w-[320px] sm:w-[320px]">
+      <div className="aspect-[9/19.5] rounded-[3rem] border-[8px] border-[#101316] bg-[#101316] p-2 shadow-[0_36px_90px_rgba(0,0,0,0.45)]">
         <div className="relative">
-          <div className="absolute left-1/2 top-0 z-10 h-6 w-28 -translate-x-1/2 rounded-b-2xl bg-[#111]" />
+          <div className="absolute left-1/2 top-0 z-10 h-7 w-32 -translate-x-1/2 rounded-b-[1.4rem] bg-[#101316]" />
         </div>
 
-        {/* Screen */}
-        <div className="overflow-hidden rounded-[2rem] bg-[#F5FAF7]">
-          {/* Status bar */}
-          <div className="flex items-center justify-between bg-white px-5 pb-2 pt-8">
-            <span className="text-[10px] font-semibold text-gray-800">9:41</span>
+        <div className="flex h-full flex-col overflow-hidden rounded-[2.35rem] bg-[#F5FAF7]">
+          <div className="flex items-center justify-between bg-white px-7 pb-3 pt-9">
+            <span className="text-[11px] font-semibold text-gray-900">9:41</span>
             <div className="flex items-center gap-1">
               <div className="flex gap-0.5">
                 <div className="h-2 w-0.5 rounded-full bg-gray-800" />
@@ -148,8 +199,7 @@ function PhoneMockup() {
             </div>
           </div>
 
-          {/* Animated screen area */}
-          <div className="relative min-h-[260px]">
+          <div className="relative flex-1">
             {screens.map((S, i) => (
               <div
                 key={i}
@@ -165,8 +215,7 @@ function PhoneMockup() {
             ))}
           </div>
 
-          {/* Security badge */}
-          <div className="flex items-center justify-center gap-1.5 pb-4">
+          <div className="flex items-center justify-center gap-1.5 bg-[#F5FAF7] pb-5">
             <svg className="h-3 w-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -179,7 +228,6 @@ function PhoneMockup() {
         </div>
       </div>
 
-      {/* Step dots */}
       <div className="mt-4 flex items-center justify-center gap-2">
         {["Escanea", "Elige", "Listo"].map((label, i) => (
           <button
@@ -206,10 +254,8 @@ function PhoneMockup() {
         ))}
       </div>
 
-      {/* Glow */}
       <div className="absolute -inset-8 -z-10 rounded-full bg-[#2ECC87]/10 blur-3xl" />
 
-      {/* Scale-in keyframe for check icon */}
       <style>{`
         @keyframes scaleIn {
           0% { transform: scale(0.3); opacity: 0; }
@@ -217,6 +263,54 @@ function PhoneMockup() {
           100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
+    </div>
+  );
+}
+
+function QRStand() {
+  return (
+    <div className="w-[220px] rounded-[1.75rem] bg-white p-5 text-center shadow-[0_24px_70px_rgba(0,0,0,0.24)] ring-1 ring-black/5 sm:w-[250px]">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0D1B1E] text-lg font-bold text-[#2ECC87]">
+        M
+      </div>
+      <p className="font-[family-name:var(--font-serif)] text-2xl leading-tight text-[#0D1B1E]">
+        Deja una propina digital
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-gray-500">
+        Escanea el QR de tu mesa y paga en segundos.
+      </p>
+      <div className="my-5 rounded-[1.25rem] bg-[#F5FAF7] p-3">
+        <SampleQRCode className="h-full w-full rounded-xl" width={360} />
+      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#2ECC87]">
+        Mesa 4
+      </p>
+      <p className="mt-2 break-all font-mono text-[10px] leading-tight text-gray-400">
+        mipropina.es/t/la-tasca-de-maria
+      </p>
+    </div>
+  );
+}
+
+function HeroVisual() {
+  return (
+    <div className="relative mx-auto flex w-full max-w-[620px] flex-col items-center justify-center pb-6 pt-4 lg:flex-row lg:justify-end">
+      <div className="absolute left-0 top-16 z-10 hidden rotate-[-4deg] lg:block">
+        <QRStand />
+      </div>
+      <div className="absolute right-2 top-6 hidden rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left backdrop-blur-md lg:block">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/40">
+          Hoy
+        </p>
+        <p className="mt-1 text-2xl font-bold text-white">128,40 &euro;</p>
+        <p className="text-xs text-white/40">24 propinas recibidas</p>
+      </div>
+      <div className="relative z-20">
+        <PhoneMockup />
+      </div>
+      <div className="mt-8 lg:hidden">
+        <QRStand />
+      </div>
     </div>
   );
 }
@@ -256,35 +350,30 @@ function TrustBar() {
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-[#0D1B1E]">
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0D1B1E] via-[#0D1B1E] to-[#2ECC87]/8" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(46,204,135,0.16),transparent_34%),linear-gradient(135deg,#0D1B1E_0%,#122B2C_50%,#101316_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#F5FAF7] to-transparent" />
 
-      <div className="relative mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 md:pt-36 md:pb-24 lg:px-8 lg:pt-40 lg:pb-28">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* ---- Text content ---- */}
+      <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-28 sm:px-6 md:pt-32 lg:px-8 lg:pb-20 lg:pt-36">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:gap-14">
           <div className="text-center lg:text-left">
-            {/* Badge */}
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#2ECC87]/20 bg-[#2ECC87]/10 px-4 py-1.5">
               <span className="h-2 w-2 animate-pulse rounded-full bg-[#2ECC87]" />
               <span className="text-xs font-semibold text-[#2ECC87]">
-                Nuevo en Espa&ntilde;a
+                Propinas por QR para hosteler&iacute;a
               </span>
             </div>
 
-            {/* Headline */}
-            <h1 className="font-[family-name:var(--font-serif)] text-4xl leading-tight text-white sm:text-5xl md:text-6xl lg:text-[3.5rem] xl:text-6xl">
-              Propinas digitales.{" "}
+            <h1 className="font-[family-name:var(--font-serif)] text-4xl leading-tight text-white sm:text-5xl md:text-6xl lg:text-[3.65rem] xl:text-[4.25rem]">
+              Propinas digitales para restaurantes que quieren{" "}
               <span className="text-[#2ECC87]">
-                Sin efectivo, sin l&iacute;os.
+                cobrar mejor.
               </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-white/60 lg:mx-0">
-              Tus clientes escanean un QR, dejan propina desde el m&oacute;vil y tu equipo cobra directamente en su cuenta bancaria.
+            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/70 lg:mx-0">
+              Tus clientes escanean un QR real de mesa, eligen el importe desde el m&oacute;vil y tu equipo ve cada propina en el panel.
             </p>
 
-            {/* CTAs */}
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
               <a
                 href="/auth/registro-restaurante"
@@ -303,25 +392,24 @@ export default function Hero() {
               </a>
             </div>
 
-            {/* Mini stats */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 lg:justify-start">
+            <div className="mt-10 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-3 lg:mx-0">
               {[
                 { value: "0\u20AC", label: "cuota mensual" },
-                { value: "5 min", label: "listo en" },
-                { value: "Stripe", label: "pagos con" },
+                { value: "Listo en", label: "5 min" },
+                { value: "Stripe", label: "pagos seguros" },
               ].map((stat) => (
-                <div key={stat.label} className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-[#2ECC87]">{stat.value}</span>
-                  <span className="text-sm text-white/40">{stat.label}</span>
+                <div
+                  key={`${stat.value}-${stat.label}`}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left backdrop-blur-sm"
+                >
+                  <span className="block text-sm font-medium text-white/40">{stat.value}</span>
+                  <span className="mt-1 block text-xl font-bold text-[#2ECC87]">{stat.label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ---- Phone mockup demo ---- */}
-          <div className="flex justify-center lg:justify-end">
-            <PhoneMockup />
-          </div>
+          <HeroVisual />
         </div>
       </div>
 
