@@ -62,7 +62,10 @@ export default function RootLayout({
     <html lang="es" className={`${dmSerif.variable} ${jakarta.variable}`}>
       <head>
         <meta name="theme-color" content="#2ECC87" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="mipropina" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="mipropina" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className="antialiased">
