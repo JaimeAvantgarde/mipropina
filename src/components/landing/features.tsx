@@ -89,14 +89,11 @@ export default function Features() {
                 <div className="w-[280px] rounded-3xl bg-[#F5FAF7] p-6 shadow-[0_8px_40px_rgba(0,0,0,0.06)]">
                   {/* Mini restaurant header */}
                   <div className="text-center mb-5">
-                    <div className="mx-auto mb-2 w-12 h-12 rounded-full bg-[#2ECC87]/10 flex items-center justify-center">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2ECC87" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="7" height="7" />
-                        <rect x="14" y="3" width="7" height="7" />
-                        <rect x="3" y="14" width="7" height="7" />
-                        <rect x="14" y="14" width="7" height="7" />
-                      </svg>
-                    </div>
+                    <img
+                      src="/restaurants/la-tasca-de-maria.svg"
+                      alt="La Tasca de María"
+                      className="mx-auto mb-2 w-14 h-14 rounded-full"
+                    />
                     <p className="text-sm font-bold text-[#0D1B1E]">La Tasca de María</p>
                   </div>
                   {/* Amounts */}

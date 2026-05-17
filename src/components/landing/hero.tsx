@@ -41,9 +41,11 @@ function ScreenScan() {
     <div className="flex h-full flex-col px-5 py-5">
       <div className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-gray-900/5">
         <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0D1B1E] text-lg font-bold text-[#2ECC87]">
-            M
-          </div>
+          <img
+            src="/restaurants/la-tasca-de-maria.svg"
+            alt="La Tasca de María"
+            className="h-11 w-11 rounded-2xl ring-1 ring-gray-900/5"
+          />
           <div>
             <p className="text-[13px] font-bold text-gray-900">La Tasca de Mar&iacute;a</p>
             <p className="text-[11px] text-gray-400">Mesa 4</p>
@@ -76,9 +78,11 @@ function ScreenChoose() {
     <div className="flex h-full flex-col px-5 py-5">
       <div className="mb-5 rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-gray-900/5">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0D1B1E] text-lg font-bold text-[#2ECC87]">
-            M
-          </div>
+          <img
+            src="/restaurants/la-tasca-de-maria.svg"
+            alt="La Tasca de María"
+            className="h-12 w-12 rounded-2xl ring-1 ring-gray-900/5"
+          />
           <div>
             <p className="text-[13px] font-bold text-gray-900">La Tasca de Mar&iacute;a</p>
             <p className="text-[11px] text-gray-400">Mesa 4</p>

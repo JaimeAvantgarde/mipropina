@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 240 240" width="240" height="240">
+  <defs>
+    <radialGradient id="bgCream" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#FBF1DC"/>
+      <stop offset="100%" stop-color="#F2DDB6"/>
+    </radialGradient>
+    <linearGradient id="leafGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6B8E5A"/>
+      <stop offset="100%" stop-color="#3F5A30"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Filled cream disc -->
+  <circle cx="120" cy="120" r="116" fill="url(#bgCream)"/>
+  <!-- Outer thick burdeos ring -->
+  <circle cx="120" cy="120" r="113" fill="none" stroke="#7E2230" stroke-width="3"/>
+  <!-- Inner thin ring -->
+  <circle cx="120" cy="120" r="104" fill="none" stroke="#7E2230" stroke-width="1" opacity="0.55"/>
+
+  <!-- Top arc text "LA TASCA DE" -->
+  <defs>
+    <path id="topArc" d="M 38 130 A 86 86 0 0 1 202 130"/>
+    <path id="bottomArc" d="M 50 130 A 70 70 0 0 0 190 130"/>
+  </defs>
+  <text font-family="Georgia, 'Times New Roman', serif" font-size="14" font-weight="700" fill="#7E2230" letter-spacing="4">
+    <textPath xlink:href="#topArc" startOffset="50%" text-anchor="middle">LA TASCA DE</textPath>
+  </text>
+
+  <!-- Central "María" in elegant script-ish serif -->
+  <text x="120" y="138" font-family="'Playfair Display', Georgia, 'Times New Roman', serif" font-size="46" font-weight="700" font-style="italic" fill="#5A1620" text-anchor="middle" letter-spacing="-1">María</text>
+
+  <!-- Small decorative line under name -->
+  <line x1="86" y1="152" x2="154" y2="152" stroke="#7E2230" stroke-width="1" opacity="0.5"/>
+
+  <!-- Two olive branches under the name -->
+  <g transform="translate(120, 168)">
+    <!-- Left branch -->
+    <g transform="translate(-28, 0) rotate(-12)">
+      <path d="M 0 0 Q 14 -2 26 -8" stroke="url(#leafGreen)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="6" cy="-3" rx="4" ry="2" fill="url(#leafGreen)" transform="rotate(-25 6 -3)"/>
+      <ellipse cx="14" cy="-6" rx="4.5" ry="2" fill="url(#leafGreen)" transform="rotate(-30 14 -6)"/>
+      <ellipse cx="22" cy="-8" rx="4" ry="2" fill="url(#leafGreen)" transform="rotate(-35 22 -8)"/>
+      <ellipse cx="10" cy="2" rx="3.5" ry="1.8" fill="url(#leafGreen)" transform="rotate(20 10 2)"/>
+      <ellipse cx="18" cy="-2" rx="3.5" ry="1.8" fill="url(#leafGreen)" transform="rotate(15 18 -2)"/>
+    </g>
+    <!-- Right branch (mirrored) -->
+    <g transform="translate(28, 0) rotate(12) scale(-1, 1)">
+      <path d="M 0 0 Q 14 -2 26 -8" stroke="url(#leafGreen)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="6" cy="-3" rx="4" ry="2" fill="url(#leafGreen)" transform="rotate(-25 6 -3)"/>
+      <ellipse cx="14" cy="-6" rx="4.5" ry="2" fill="url(#leafGreen)" transform="rotate(-30 14 -6)"/>
+      <ellipse cx="22" cy="-8" rx="4" ry="2" fill="url(#leafGreen)" transform="rotate(-35 22 -8)"/>
+      <ellipse cx="10" cy="2" rx="3.5" ry="1.8" fill="url(#leafGreen)" transform="rotate(20 10 2)"/>
+      <ellipse cx="18" cy="-2" rx="3.5" ry="1.8" fill="url(#leafGreen)" transform="rotate(15 18 -2)"/>
+    </g>
+    <!-- Center small wine glass icon -->
+    <g transform="translate(0, -2)">
+      <path d="M -5 -6 Q -5 2 0 4 Q 5 2 5 -6 Z" fill="#7E2230"/>
+      <line x1="0" y1="4" x2="0" y2="10" stroke="#7E2230" stroke-width="1.2"/>
+      <line x1="-4" y1="10" x2="4" y2="10" stroke="#7E2230" stroke-width="1.2" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Bottom arc text "ESTABLECIDA 1987" -->
+  <text font-family="Georgia, 'Times New Roman', serif" font-size="9" font-weight="600" fill="#7E2230" letter-spacing="3">
+    <textPath xlink:href="#bottomArc" startOffset="50%" text-anchor="middle">EST · 1987 · GRANADA</textPath>
+  </text>
+</svg>
