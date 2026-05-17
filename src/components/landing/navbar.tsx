@@ -38,7 +38,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center" aria-label="mipropina">
             <img
-              src="/logos/mipropina-logo-verde.svg"
+              src={scrolled ? "/logos/mipropina-logo-blanco.svg" : "/logos/mipropina-logo-verde.svg"}
               alt="mipropina"
               className="h-14 w-auto md:h-16"
             />
