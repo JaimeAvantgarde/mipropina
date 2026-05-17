@@ -274,9 +274,14 @@ function PhoneMockup() {
 function QRStand() {
   return (
     <div className="w-[220px] rounded-[1.75rem] bg-white p-5 text-center shadow-[0_24px_70px_rgba(0,0,0,0.24)] ring-1 ring-black/5 sm:w-[250px]">
-      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0D1B1E] text-lg font-bold text-[#2ECC87]">
-        M
-      </div>
+      <img
+        src="/restaurants/la-tasca-de-maria.svg"
+        alt="La Tasca de María"
+        className="mx-auto mb-4 h-14 w-14 rounded-2xl"
+      />
+      <p className="-mt-2 mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">
+        La Tasca de Mar&iacute;a
+      </p>
       <p className="font-[family-name:var(--font-serif)] text-2xl leading-tight text-[#0D1B1E]">
         Deja una propina digital
       </p>
