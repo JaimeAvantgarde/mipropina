@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 30 420 420" width="420" height="420">
+  <defs>
+    <radialGradient id="coin-verde" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#FFF2B8"/>
+      <stop offset="35%" stop-color="#F5C744"/>
+      <stop offset="100%" stop-color="#B8860B"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="360" cy="240" r="180" fill="none" stroke="#198754" stroke-width="3"/>
+  <circle cx="360" cy="240" r="166" fill="none" stroke="#A3D9A5" stroke-width="6"/>
+
+  <text x="360" y="262" font-family="Inter Tight, Arial, sans-serif" font-size="64" font-weight="700" fill="#0F5132" text-anchor="middle" style="letter-spacing:-2.4px">MiPropina</text>
+
+  <ellipse cx="426.29" cy="206.10" rx="13.30" ry="3.50" fill="rgba(0,0,0,0.18)"/>
+  <circle cx="426.29" cy="204" r="14" fill="#B8860B"/>
+  <circle cx="426.29" cy="204" r="11.48" fill="url(#coin-verde)"/>
+  <circle cx="426.29" cy="204" r="10.10" fill="none" stroke="#B8860B" stroke-width="0.56" opacity="0.5"/>
+  <path d="M 419.41 201.70 A 8.04 8.04 0 0 1 425.15 196.54" stroke="rgba(255,255,255,0.7)" stroke-width="1.12" fill="none" stroke-linecap="round"/>
+  <text x="426.29" y="208.48" font-size="14.70" font-weight="800" fill="#B8860B" text-anchor="middle" font-family="Inter Tight, Arial, sans-serif" style="letter-spacing:-0.05em">€</text>
+</svg>
