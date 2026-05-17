@@ -10,7 +10,7 @@
   <circle cx="360" cy="240" r="180" fill="none" stroke="#198754" stroke-width="3"/>
   <circle cx="360" cy="240" r="166" fill="none" stroke="#A3D9A5" stroke-width="6"/>
 
-  <text x="360" y="262" font-family="Inter Tight, Arial, sans-serif" font-size="64" font-weight="700" fill="#0F5132" text-anchor="middle" style="letter-spacing:-2.4px">MiPropina</text>
+  <text x="360" y="262" font-family="Inter Tight, Arial, sans-serif" font-size="64" font-weight="700" fill="#0F5132" text-anchor="middle" style="letter-spacing:-2.4px">MıPropina</text>
 
   <ellipse cx="426.29" cy="206.10" rx="13.30" ry="3.50" fill="rgba(0,0,0,0.18)"/>
   <circle cx="426.29" cy="204" r="14" fill="#B8860B"/>

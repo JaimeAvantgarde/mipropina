@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 540" width="720" height="540">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 30 420 420" width="420" height="420">
   <defs><radialGradient id="coin-azul" cx="35%" cy="30%" r="80%">
       <stop offset="0%" stop-color="#FFF2B8"></stop>
       <stop offset="35%" stop-color="#F0C040"></stop>
@@ -13,7 +13,7 @@
   <circle cx="360" cy="240" r="166" fill="none" stroke="#A8C5E8" stroke-width="6"></circle>
 
   
-  <text x="360" y="262" font-family="Inter Tight, Arial, sans-serif" font-size="64" font-weight="700" fill="#0A2540" text-anchor="middle" style="letter-spacing:-2.4px">MiPropina</text>
+  <text x="360" y="262" font-family="Inter Tight, Arial, sans-serif" font-size="64" font-weight="700" fill="#0A2540" text-anchor="middle" style="letter-spacing:-2.4px">MıPropina</text>
 
   
   <rect x="415.29" y="210.00" width="22" height="14" fill="#F4F6FA"></rect>
@@ -31,5 +31,4 @@
   
 
   
-  <text x="360" y="470" font-family="Inter Tight, Arial, sans-serif" font-size="14" font-weight="600" fill="#0A2540" text-anchor="middle" style="letter-spacing:4px">GRACIAS EN UN ESCANEO</text>
-</svg>
+  </svg>
