@@ -110,7 +110,7 @@ export default function DashboardPage() {
   if (!data) return null;
 
   const { restaurant, tips, staff, stats, currentUserRole, currentUserStaffId } = data;
-  const isOwner = currentUserRole === "owner";
+  const isOwner = currentUserRole === "manager";
   const activeStaff = staff.filter((s) => s.active);
   const hasTips = tips.length > 0;
   const hasStaff = staff.length > 1;
@@ -260,8 +260,8 @@ export default function DashboardPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#0D1B1E] truncate">{s.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <Badge variant={s.role === "owner" ? "info" : "active"}>
-                      {s.role === "owner" ? "Gerente" : "Camarero"}
+                    <Badge variant={s.role === "manager" ? "info" : "active"}>
+                      {s.role === "manager" ? "Gerente" : s.role === "kitchen" ? "Cocina" : "Camarero"}
                     </Badge>
                     {s.stripe_payout_id && (
                       <span className="text-[9px] font-semibold text-[#635BFF] bg-[#635BFF]/10 px-1.5 py-0.5 rounded">

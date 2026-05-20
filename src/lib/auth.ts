@@ -1,148 +1,48 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { requireStaff, requireManager, type StaffRole, type StaffSession } from "@/lib/session";
+import { requireAdmin } from "@/lib/admin-auth";
 
-type AuthResult = {
-  userId: string;
+// ---------------------------------------------------------------------------
+// Thin compatibility shims for the rest of the codebase.
+// All real logic lives in lib/session.ts (staff) and lib/admin-auth.ts (Mario).
+// ---------------------------------------------------------------------------
+
+export type AuthResult = {
+  userId: string;       // same as staffId now (no Supabase Auth row)
   staffId: string;
   restaurantId: string;
-  role: "owner" | "waiter";
+  role: StaffRole;
 };
 
-/**
- * Verifies that the request comes from an authenticated user
- * and returns their staff info (id, restaurant_id, role).
- * Returns null and a NextResponse error if unauthorized.
- */
+function toAuthResult(session: StaffSession): AuthResult {
+  return {
+    userId: session.staffId,
+    staffId: session.staffId,
+    restaurantId: session.restaurantId,
+    role: session.role,
+  };
+}
+
 export async function requireAuth(): Promise<
   { auth: AuthResult; error: null } | { auth: null; error: NextResponse }
 > {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return {
-        auth: null,
-        error: NextResponse.json(
-          { error: "No autenticado." },
-          { status: 401 }
-        ),
-      };
-    }
-
-    const { data: staffRecord } = await supabaseAdmin
-      .from("staff")
-      .select("id, restaurant_id, role")
-      .eq("auth_user_id", user.id)
-      .eq("active", true)
-      .maybeSingle();
-
-    if (!staffRecord) {
-      return {
-        auth: null,
-        error: NextResponse.json(
-          { error: "No se encontró tu perfil." },
-          { status: 403 }
-        ),
-      };
-    }
-
-    return {
-      auth: {
-        userId: user.id,
-        staffId: staffRecord.id,
-        restaurantId: staffRecord.restaurant_id,
-        role: staffRecord.role as "owner" | "waiter",
-      },
-      error: null,
-    };
-  } catch {
-    return {
-      auth: null,
-      error: NextResponse.json(
-        { error: "Error de autenticación." },
-        { status: 401 }
-      ),
-    };
-  }
+  const result = await requireStaff();
+  if (result.error) return { auth: null, error: result.error };
+  return { auth: toAuthResult(result.session), error: null };
 }
 
-/**
- * Requires the user to be an owner of the given restaurant.
- */
 export async function requireOwner(restaurantId?: string): Promise<
   { auth: AuthResult; error: null } | { auth: null; error: NextResponse }
 > {
-  const result = await requireAuth();
-  if (result.error) return result;
-
-  if (result.auth.role !== "owner") {
-    return {
-      auth: null,
-      error: NextResponse.json(
-        { error: "Solo el gerente puede realizar esta acción." },
-        { status: 403 }
-      ),
-    };
-  }
-
-  if (restaurantId && result.auth.restaurantId !== restaurantId) {
-    return {
-      auth: null,
-      error: NextResponse.json(
-        { error: "No tienes acceso a este restaurante." },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return result;
+  const result = await requireManager(restaurantId);
+  if (result.error) return { auth: null, error: result.error };
+  return { auth: toAuthResult(result.session), error: null };
 }
 
-/**
- * Requires the user to be the platform superadmin (SUPERADMIN_EMAIL env var).
- */
 export async function requireSuperadmin(): Promise<
   { email: string; error: null } | { email: null; error: NextResponse }
 > {
-  const superadminEmail = process.env.SUPERADMIN_EMAIL;
-  if (!superadminEmail) {
-    return {
-      email: null,
-      error: NextResponse.json(
-        { error: "Panel de administración no configurado." },
-        { status: 503 }
-      ),
-    };
-  }
-
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user || user.email?.toLowerCase() !== superadminEmail.toLowerCase()) {
-      return {
-        email: null,
-        error: NextResponse.json(
-          { error: "Acceso denegado." },
-          { status: 403 }
-        ),
-      };
-    }
-
-    return { email: user.email, error: null };
-  } catch {
-    return {
-      email: null,
-      error: NextResponse.json(
-        { error: "Error de autenticación." },
-        { status: 401 }
-      ),
-    };
-  }
+  const result = await requireAdmin();
+  if (result.error) return { email: null, error: result.error };
+  return { email: result.admin.user, error: null };
 }

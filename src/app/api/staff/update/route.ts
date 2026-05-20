@@ -18,7 +18,7 @@ export async function PUT(request: Request) {
     if (authError) return authError;
 
     const isSelf = auth.staffId === id;
-    const isOwner = auth.role === "owner";
+    const isOwner = auth.role === "manager";
 
     // Only owner or the member themselves can update a profile
     if (!isSelf && !isOwner) {

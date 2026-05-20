@@ -1,72 +1,76 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import {
+  ADMIN_COOKIE,
+  STAFF_COOKIE,
+  verifyToken,
+} from "@/lib/cookies";
 
-export async function middleware(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// ---------------------------------------------------------------------------
+// Auth gating happens at the route handlers (lib/session, lib/admin-auth).
+// The middleware just does a cheap cookie/signature check to redirect early.
+// ---------------------------------------------------------------------------
 
-  // Skip auth check if Supabase is not configured (dev mode)
-  if (!supabaseUrl || !supabaseKey) {
+function hasValidCookie(
+  request: NextRequest,
+  cookieName: string,
+  kind: "admin" | "staff",
+  secret: string | undefined
+): boolean {
+  if (!secret || secret.length < 32) return false;
+  const token = request.cookies.get(cookieName)?.value;
+  return verifyToken(token, kind, secret) !== null;
+}
+
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // ----- /admin (Mario) -----
+  if (pathname.startsWith("/admin")) {
+    const isLoginPage = pathname === "/admin/login";
+    const valid = hasValidCookie(
+      request,
+      ADMIN_COOKIE,
+      "admin",
+      process.env.ADMIN_COOKIE_SECRET
+    );
+
+    if (!valid && !isLoginPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      return NextResponse.redirect(url);
+    }
+    if (valid && isLoginPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin";
+      return NextResponse.redirect(url);
+    }
     return NextResponse.next();
   }
 
-  let supabaseResponse = NextResponse.next({ request });
+  // ----- /dashboard, /perfil, /onboarding (staff) -----
+  const isStaffArea =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/perfil") ||
+    pathname.startsWith("/onboarding");
 
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value)
-        );
-        supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        );
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
-
-  // Protect dashboard/admin routes: redirect unauthenticated users to login
-  const protectedPaths = ["/dashboard", "/perfil", "/admin"];
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
-
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+  if (isStaffArea) {
+    const valid = hasValidCookie(
+      request,
+      STAFF_COOKIE,
+      "staff",
+      process.env.SESSION_SECRET
+    );
+    if (!valid) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
-  // Auth pages that should redirect authenticated users away
-  const authOnlyPaths = ["/auth/login", "/auth/registro-restaurante", "/auth/recuperar", "/auth/registro"];
-  const isAuthOnly = authOnlyPaths.some((p) => pathname.startsWith(p));
-
-  if (isAuthOnly && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
-
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/perfil/:path*",
-    "/admin/:path*",
-    "/auth/login",
-    "/auth/registro-restaurante",
-    "/auth/recuperar",
-    "/auth/registro",
-  ],
+  matcher: ["/admin/:path*", "/dashboard/:path*", "/perfil/:path*", "/onboarding/:path*"],
 };

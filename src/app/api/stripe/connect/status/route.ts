@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       .eq("stripe_payout_id", accountId)
       .maybeSingle();
 
-    const canReadRestaurantAccount = Boolean(restaurant && auth.role === "owner");
+    const canReadRestaurantAccount = Boolean(restaurant && auth.role === "manager");
     const canReadStaffAccount = Boolean(staffAccount && staffAccount.id === auth.staffId);
 
     if (!canReadRestaurantAccount && !canReadStaffAccount) {

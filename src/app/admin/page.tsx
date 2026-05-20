@@ -11,6 +11,8 @@ type RestaurantMetric = {
   logo_emoji: string;
   logo_url: string | null;
   stripe_account_id: string | null;
+  manager_id: string | null;
+  manager_name: string | null;
   created_at: string;
   tips_count: number;
   total_tips_cents: number;
@@ -113,13 +115,27 @@ export default function AdminPage() {
 
       {/* Restaurants Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Restaurantes</h2>
+          <Link
+            href="/admin/restaurantes/nuevo"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
+          >
+            + Nuevo restaurante
+          </Link>
         </div>
 
         {restaurants.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-500">
             No hay restaurantes registrados.
+            <div className="mt-4">
+              <Link
+                href="/admin/restaurantes/nuevo"
+                className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg"
+              >
+                Crear el primero
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -127,8 +143,9 @@ export default function AdminPage() {
               <thead>
                 <tr className="bg-gray-50 text-left text-gray-500 font-medium">
                   <th className="px-6 py-3">Bar</th>
+                  <th className="px-4 py-3 hidden md:table-cell">Gerente</th>
                   <th className="px-4 py-3 text-right">Propinas</th>
-                  <th className="px-4 py-3 text-right hidden md:table-cell">
+                  <th className="px-4 py-3 text-right hidden lg:table-cell">
                     Fees
                   </th>
                   <th className="px-4 py-3 text-right">Neto</th>
@@ -163,13 +180,22 @@ export default function AdminPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-4 py-4 hidden md:table-cell text-gray-600">
+                        {r.manager_name ? (
+                          <span className="text-sm">{r.manager_name}</span>
+                        ) : (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
+                            Sin gerente
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-4 text-right font-medium">
                         {formatCents(r.total_tips_cents)}
                         <span className="text-gray-400 text-xs ml-1">
                           ({r.tips_count})
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-right text-gray-500 hidden md:table-cell">
+                      <td className="px-4 py-4 text-right text-gray-500 hidden lg:table-cell">
                         {formatCents(r.total_fees_cents)}
                       </td>
                       <td className="px-4 py-4 text-right font-medium text-emerald-600">

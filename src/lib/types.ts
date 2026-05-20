@@ -5,7 +5,7 @@ export type Restaurant = {
   logo_emoji: string;
   logo_url: string | null;
   theme_color: string;
-  owner_id: string;
+  manager_id: string | null;
   stripe_account_id: string | null;
   stripe_charges_enabled: boolean;
   stripe_payouts_enabled: boolean;
@@ -20,21 +20,21 @@ export type Restaurant = {
   deleted_at: string | null;
 };
 
-export type StaffRole = "owner" | "waiter";
+export type StaffRole = "manager" | "waiter" | "kitchen";
+export type StaffStatus = "active" | "pending" | "inactive";
 
 export type Staff = {
   id: string;
   restaurant_id: string;
-  auth_user_id: string | null;
   name: string;
-  email: string;
-  phone: string | null;
+  email: string | null;
+  phone: string;
   avatar_emoji: string;
   role: StaffRole;
-  iban: string | null;
   stripe_payout_id: string | null;
   stripe_payouts_enabled: boolean;
   active: boolean;
+  status: StaffStatus;
   default_share_pct: number | null;
   created_at: string;
 };
@@ -83,9 +83,10 @@ export type Payout = {
 export type InviteCode = {
   id: string;
   restaurant_id: string;
-  code?: string;
+  token: string;
   phone: string;
   name: string;
+  role: StaffRole;
   used: boolean;
   expires_at: string;
   created_at: string;

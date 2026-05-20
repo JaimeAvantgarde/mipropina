@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { getWhatsAppLink } from "@/lib/utils";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { createInvite, normalizePhone } from "@/lib/invite";
 
-import { randomBytes } from "crypto";
+// Manager-invokes-this endpoint to invite waiters and kitchen staff.
+// The platform admin (Mario) has its own endpoint for inviting managers.
 
-function generateToken(): string {
-  return randomBytes(16).toString("hex");
-}
+const ALLOWED_ROLES = new Set(["waiter", "kitchen"]);
 
 export async function POST(request: Request) {
   try {
@@ -21,68 +20,97 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const { restaurant_id, restaurant_name, name, phone } = body;
+    let body: {
+      restaurant_id?: string;
+      name?: string;
+      phone?: string;
+      role?: string;
+    };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Petición inválida." }, { status: 400 });
+    }
 
-    if (!restaurant_id || typeof restaurant_id !== "string") {
+    const restaurantId = (body.restaurant_id ?? "").trim();
+    if (!restaurantId) {
       return NextResponse.json(
         { error: "restaurant_id es obligatorio." },
         { status: 400 }
       );
     }
 
-    const { error: authError } = await requireOwner(restaurant_id);
+    const { error: authError } = await requireOwner(restaurantId);
     if (authError) return authError;
 
-    if (!name || typeof name !== "string" || name.trim().length < 2) {
+    const name = (body.name ?? "").trim();
+    if (name.length < 2) {
       return NextResponse.json(
         { error: "El nombre es obligatorio (mínimo 2 caracteres)." },
         { status: 400 }
       );
     }
 
-    if (!phone || typeof phone !== "string") {
+    const phone = normalizePhone(body.phone ?? "");
+    if (!phone) {
       return NextResponse.json(
-        { error: "El teléfono es obligatorio." },
+        { error: "Teléfono inválido." },
         { status: 400 }
       );
     }
 
-    const token = generateToken();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.replace("mipropina-seven.vercel.app", "mipropina.es") || "https://mipropina.es";
-    const inviteLink = `${appUrl}/auth/registro?token=${token}`;
-
-    // Insert invite into database
-    const { error: insertError } = await supabaseAdmin.from("invite_code").insert({
-      restaurant_id,
-      code: token,
-      name: name.trim(),
-      phone,
-      used: false,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    });
-
-    if (insertError) {
-      console.error("[invite] Insert error:", insertError);
+    const role = (body.role ?? "waiter").trim();
+    if (!ALLOWED_ROLES.has(role)) {
       return NextResponse.json(
-        { error: "Error al guardar la invitación." },
-        { status: 500 }
+        { error: "Rol inválido." },
+        { status: 400 }
       );
     }
 
-    const rName = restaurant_name || "mipropina";
-    const message = `¡Hola ${name.trim()}! Te invitan a unirte al equipo de ${rName} en mipropina. Entra aquí para registrarte:\n\n${inviteLink}`;
+    // Phone must be free
+    const { data: clash } = await supabaseAdmin
+      .from("staff")
+      .select("id")
+      .eq("phone", phone)
+      .neq("status", "inactive")
+      .maybeSingle();
 
-    const whatsapp_link = getWhatsAppLink(phone, message);
+    if (clash) {
+      return NextResponse.json(
+        { error: "Ese teléfono ya pertenece a otro miembro activo." },
+        { status: 409 }
+      );
+    }
+
+    const { data: restaurant } = await supabaseAdmin
+      .from("restaurant")
+      .select("id, name")
+      .eq("id", restaurantId)
+      .maybeSingle();
+
+    if (!restaurant) {
+      return NextResponse.json(
+        { error: "Restaurante no encontrado." },
+        { status: 404 }
+      );
+    }
+
+    const invite = await createInvite({
+      restaurantId,
+      role: role as "waiter" | "kitchen",
+      name,
+      phone,
+      restaurantName: restaurant.name as string,
+    });
 
     return NextResponse.json({
-      invite_link: inviteLink,
-      whatsapp_link,
+      invite_link: invite.url,
+      whatsapp_link: invite.whatsappUrl,
     });
   } catch (error) {
     console.error("[invite] Error:", error);
     return NextResponse.json(
-      { error: "Error al generar la invitación." },
+      { error: error instanceof Error ? error.message : "Error al generar la invitación." },
       { status: 500 }
     );
   }
