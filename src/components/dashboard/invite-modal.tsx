@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { getWhatsAppLink } from "@/lib/utils";
 
 interface InviteModalProps {
   open: boolean;
@@ -13,10 +12,26 @@ interface InviteModalProps {
   restaurantName?: string;
 }
 
-function InviteModal({ open, onClose, restaurantId, restaurantName = "tu restaurante" }: InviteModalProps) {
+type Role = "waiter" | "kitchen";
+
+const ROLE_OPTIONS: { value: Role; label: string; icon: string }[] = [
+  { value: "waiter", label: "Camarero", icon: "🧑‍🍳" },
+  { value: "kitchen", label: "Cocina", icon: "👨‍🍳" },
+];
+
+function InviteModal({
+  open,
+  onClose,
+  restaurantId,
+  restaurantName = "tu restaurante",
+}: InviteModalProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [role, setRole] = useState<Role>("waiter");
+  const [result, setResult] = useState<{
+    invite_link: string;
+    whatsapp_link: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
@@ -34,16 +49,19 @@ function InviteModal({ open, onClose, restaurantId, restaurantName = "tu restaur
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           restaurant_id: restaurantId,
-          restaurant_name: restaurantName,
           name: name.trim(),
-          phone: phone.startsWith("+34") ? phone : `+34${phone.replace(/\s/g, "")}`,
+          phone,
+          role,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setInviteLink(data.invite_link);
+      setResult({
+        invite_link: data.invite_link,
+        whatsapp_link: data.whatsapp_link,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al generar la invitación");
     } finally {
@@ -52,35 +70,31 @@ function InviteModal({ open, onClose, restaurantId, restaurantName = "tu restaur
   };
 
   const handleCopy = async () => {
-    if (!inviteLink) return;
-    await navigator.clipboard.writeText(inviteLink);
+    if (!result) return;
+    await navigator.clipboard.writeText(result.invite_link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const getWhatsAppUrl = () => {
-    if (!inviteLink) return "#";
-    const fullPhone = phone.startsWith("+34") ? phone : `+34${phone.replace(/\s/g, "")}`;
-    const message = `¡Hola ${name}! Te invitan a unirte al equipo de ${restaurantName} en mipropina. Entra aquí para registrarte:\n\n${inviteLink}`;
-    return getWhatsAppLink(fullPhone, message);
   };
 
   const handleClose = () => {
     setName("");
     setPhone("");
-    setInviteLink(null);
+    setRole("waiter");
+    setResult(null);
     setCopied(false);
     setError("");
     onClose();
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Invitar camarero">
-      {!inviteLink ? (
+    <Modal open={open} onClose={handleClose} title="Invitar al equipo">
+      {!result ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <p className="text-sm text-gray-500">
-            Se le enviará un enlace directo por WhatsApp para que se registre automáticamente.
+            Le aparecerá un enlace que abrirá WhatsApp con el mensaje listo. Tú
+            le das al botón verde y se envía desde tu móvil.
           </p>
+
           <Input
             label="Nombre"
             placeholder="Ej: Juan Pérez"
@@ -88,6 +102,7 @@ function InviteModal({ open, onClose, restaurantId, restaurantName = "tu restaur
             onChange={(e) => setName(e.target.value)}
             required
           />
+
           <div className="flex flex-col gap-1.5 w-full">
             <label className="text-sm font-semibold text-[#1A3C34]">
               Teléfono
@@ -107,33 +122,64 @@ function InviteModal({ open, onClose, restaurantId, restaurantName = "tu restaur
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm text-[#EF4444]">{error}</p>
-          )}
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-semibold text-[#1A3C34]">Rol</label>
+            <div className="grid grid-cols-2 gap-2">
+              {ROLE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setRole(opt.value)}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-[14px] border-2 text-sm font-semibold transition-colors ${
+                    role === opt.value
+                      ? "border-[#2ECC87] bg-[#E8F5E9] text-[#1A3C34]"
+                      : "border-[#E5E7EB] bg-white text-gray-600 hover:border-gray-300"
+                  }`}
+                >
+                  <span className="text-lg">{opt.icon}</span>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-[#EF4444]">{error}</p>}
 
           <Button type="submit" loading={loading} className="mt-2 w-full">
-            Enviar invitación
+            Generar enlace
           </Button>
         </form>
       ) : (
         <div className="flex flex-col items-center gap-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#E8F5E9]">
-            <svg className="h-7 w-7 text-[#2ECC87]" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            <svg
+              className="h-7 w-7 text-[#2ECC87]"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.5 12.75l6 6 9-13.5"
+              />
             </svg>
           </div>
 
           <div className="text-center">
-            <p className="font-semibold text-[#0D1B1E]">Invitación lista para {name}</p>
+            <p className="font-semibold text-[#0D1B1E]">
+              Enlace listo para {name}
+            </p>
             <p className="mt-1 text-sm text-gray-500">
-              Envíale el enlace por WhatsApp. Al abrirlo, podrá registrarse directamente.
+              Pulsa &quot;WhatsApp&quot; para abrir el chat con el mensaje ya
+              escrito desde {restaurantName}.
             </p>
           </div>
 
-          {/* Link preview */}
           <div className="w-full rounded-2xl bg-[#F5FAF7] p-4">
             <p className="break-all text-center text-xs font-mono text-gray-500">
-              {inviteLink}
+              {result.invite_link}
             </p>
           </div>
 
@@ -146,7 +192,7 @@ function InviteModal({ open, onClose, restaurantId, restaurantName = "tu restaur
               {copied ? "✓ Copiado" : "Copiar enlace"}
             </Button>
             <a
-              href={getWhatsAppUrl()}
+              href={result.whatsapp_link}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-2 py-3 px-6 text-[15px] font-bold text-white bg-[#25D366] rounded-[14px] hover:bg-[#20bd5a] transition-colors"

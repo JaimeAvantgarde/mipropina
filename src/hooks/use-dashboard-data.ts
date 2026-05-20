@@ -11,7 +11,7 @@ const mockRestaurant: Restaurant = {
   logo_emoji: "🍽️",
   logo_url: null,
   theme_color: "#2ECC87",
-  owner_id: "1",
+  manager_id: "1",
   stripe_account_id: null,
   stripe_charges_enabled: false,
   stripe_payouts_enabled: false,
@@ -35,9 +35,9 @@ const mockTips: Tip[] = [
 ];
 
 const mockStaff: Staff[] = [
-  { id: "1", restaurant_id: "demo", auth_user_id: null, name: "Carlos Garcia", email: "carlos@test.com", phone: "+34612345678", avatar_emoji: "👨‍🍳", role: "owner", iban: "ES12 1234 5678 9012 3456 7890", stripe_payout_id: "acct_1", stripe_payouts_enabled: true, active: true, default_share_pct: null, created_at: "2024-01-01" },
-  { id: "2", restaurant_id: "demo", auth_user_id: null, name: "Maria Lopez", email: "maria@test.com", phone: "+34623456789", avatar_emoji: "👩‍🍳", role: "waiter", iban: "ES34 9876 5432 1098 7654 3210", stripe_payout_id: "acct_2", stripe_payouts_enabled: true, active: true, default_share_pct: null, created_at: "2024-02-15" },
-  { id: "3", restaurant_id: "demo", auth_user_id: null, name: "Pedro Ruiz", email: "pedro@test.com", phone: "+34634567890", avatar_emoji: "🧑‍🍳", role: "waiter", iban: null, stripe_payout_id: null, stripe_payouts_enabled: false, active: true, default_share_pct: null, created_at: "2024-03-01" },
+  { id: "1", restaurant_id: "demo", name: "Carlos Garcia", email: "carlos@test.com", phone: "+34612345678", avatar_emoji: "👨‍🍳", role: "manager", stripe_payout_id: "acct_1", stripe_payouts_enabled: true, active: true, status: "active", default_share_pct: null, created_at: "2024-01-01" },
+  { id: "2", restaurant_id: "demo", name: "Maria Lopez", email: "maria@test.com", phone: "+34623456789", avatar_emoji: "👩‍🍳", role: "waiter", stripe_payout_id: "acct_2", stripe_payouts_enabled: true, active: true, status: "active", default_share_pct: null, created_at: "2024-02-15" },
+  { id: "3", restaurant_id: "demo", name: "Pedro Ruiz", email: null, phone: "+34634567890", avatar_emoji: "🧑‍🍳", role: "waiter", stripe_payout_id: null, stripe_payouts_enabled: false, active: true, status: "active", default_share_pct: null, created_at: "2024-03-01" },
 ];
 
 const mockPendingInvites: InviteCode[] = [];
@@ -47,8 +47,9 @@ export type DashboardData = {
   staff: Staff[];
   tips: Tip[];
   pendingInvites: InviteCode[];
-  currentUserRole: "owner" | "waiter";
+  currentUserRole: "manager" | "waiter" | "kitchen";
   currentUserStaffId: string;
+  needsOnboarding?: boolean;
   stats: {
     totalCents: number;
     netCents: number;
@@ -121,7 +122,7 @@ export function useDashboardData() {
           staff: mockStaff,
           tips: mockTips,
           pendingInvites: mockPendingInvites,
-          currentUserRole: "owner",
+          currentUserRole: "manager",
           currentUserStaffId: mockStaff[0].id,
           stats: computeMockStats(),
         });

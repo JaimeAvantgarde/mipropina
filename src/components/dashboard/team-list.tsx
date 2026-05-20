@@ -75,7 +75,7 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
     setEditError(null);
     setEditForm({
       name: member.name,
-      email: member.email,
+      email: member.email ?? "",
       phone: member.phone || "",
       avatar_emoji: member.avatar_emoji,
     });
@@ -134,8 +134,9 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
   };
 
   const roleLabels: Record<string, string> = {
-    owner: "Gerente",
+    manager: "Gerente",
     waiter: "Camarero",
+    kitchen: "Cocina",
   };
 
   const emojiOptions = ["😊", "😎", "🤠", "👨‍🍳", "👩‍🍳", "🧑‍🍳", "🍕", "🍻", "☕", "🎯", "⭐", "🌟"];
@@ -185,16 +186,9 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant={m.role === "owner" ? "info" : "active"}>
+                    <Badge variant={m.role === "manager" ? "info" : "active"}>
                       {roleLabels[m.role] || m.role}
                     </Badge>
-                  </td>
-                  <td className="px-6 py-4">
-                    {m.iban ? (
-                      <Badge variant="active">Verificado</Badge>
-                    ) : (
-                      <Badge variant="pending">Pendiente</Badge>
-                    )}
                   </td>
                   <td className="px-6 py-4">
                     {m.stripe_payout_id ? (
@@ -237,7 +231,7 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
                           <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                         </svg>
                       </button>
-                      {m.role !== "owner" && (
+                      {m.role !== "manager" && (
                         <button
                           onClick={() => setDeletingMember(m)}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
@@ -295,14 +289,11 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
 
               {/* Badges row */}
               <div className="flex flex-wrap gap-1.5 mb-3">
-                <Badge variant={m.role === "owner" ? "info" : "active"}>
+                <Badge variant={m.role === "manager" ? "info" : "active"}>
                   {roleLabels[m.role] || m.role}
                 </Badge>
                 <Badge variant={m.active ? "active" : "pending"}>
                   {m.active ? "Activo" : "Inactivo"}
-                </Badge>
-                <Badge variant={m.iban ? "active" : "pending"}>
-                  {m.iban ? "IBAN ✓" : "Sin IBAN"}
                 </Badge>
                 <Badge variant={m.stripe_payout_id ? "active" : "pending"}>
                   {m.stripe_payout_id ? "Stripe ✓" : "Sin Stripe"}
@@ -321,7 +312,7 @@ function TeamList({ staff, onInvite, onRefresh, readOnly = false }: TeamListProp
                     </svg>
                     Editar
                   </button>
-                  {m.role !== "owner" && (
+                  {m.role !== "manager" && (
                     <button
                       onClick={() => setDeletingMember(m)}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"

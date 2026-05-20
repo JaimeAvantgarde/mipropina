@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import Link from "next/link";
+import { getAdminSession } from "@/lib/admin-auth";
+import { headers } from "next/headers";
 
 export const metadata = {
   title: "Admin — mipropina",
@@ -11,30 +13,25 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const superadminEmail = process.env.SUPERADMIN_EMAIL;
+  const headersList = await headers();
+  const pathname = headersList.get("x-invoke-path") ?? headersList.get("next-url") ?? "";
+  const isLoginPage = pathname.endsWith("/admin/login");
 
-  if (!superadminEmail) {
-    redirect("/");
+  const admin = await getAdminSession();
+
+  if (!admin && !isLoginPage) {
+    redirect("/admin/login");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth/login");
-  }
-
-  if (user.email?.toLowerCase() !== superadminEmail.toLowerCase()) {
-    redirect("/dashboard");
+  if (isLoginPage) {
+    return <>{children}</>;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link href="/admin" className="flex items-center gap-3">
             <span className="text-2xl">🛡️</span>
             <div>
               <h1 className="text-lg font-bold text-gray-900">
@@ -42,8 +39,20 @@ export default async function AdminLayout({
               </h1>
               <p className="text-sm text-gray-500">mipropina.es</p>
             </div>
+          </Link>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-400 hidden sm:inline">
+              {admin?.user}
+            </span>
+            <form action="/api/admin/logout" method="POST">
+              <button
+                type="submit"
+                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Salir
+              </button>
+            </form>
           </div>
-          <span className="text-sm text-gray-400">{user.email}</span>
         </div>
       </header>
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

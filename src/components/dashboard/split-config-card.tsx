@@ -160,7 +160,7 @@ export function SplitConfigCard({ restaurant, staff, onSaved }: SplitConfigCardP
                       <span className="text-lg">{s.avatar_emoji}</span>
                       <div>
                         <span className="text-sm font-medium text-[#0D1B1E]">{s.name}</span>
-                        {s.role === "owner" && (
+                        {s.role === "manager" && (
                           <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                             Gerente
                           </span>

@@ -6,16 +6,15 @@ import { getRestaurantTipLedger } from "@/lib/balances";
 type StaffRow = {
   id: string;
   restaurant_id: string;
-  auth_user_id: string | null;
   name: string;
-  email: string;
-  phone: string | null;
+  email: string | null;
+  phone: string;
   avatar_emoji: string;
-  role: "owner" | "waiter";
-  iban: string | null;
+  role: "manager" | "waiter" | "kitchen";
   stripe_payout_id: string | null;
   stripe_payouts_enabled: boolean;
   active: boolean;
+  status: "active" | "pending" | "inactive";
   default_share_pct: number | null;
   created_at: string;
 };
@@ -39,7 +38,7 @@ export async function GET() {
     const restaurantId = auth.restaurantId;
     const currentUserRole = auth.role;
     const currentUserStaffId = auth.staffId;
-    const isOwner = currentUserRole === "owner";
+    const isManager = currentUserRole === "manager";
 
     const { data: restaurant, error: restError } = await supabaseAdmin
       .from("restaurant")
@@ -59,25 +58,24 @@ export async function GET() {
       .from("staff")
       .select("*")
       .eq("restaurant_id", restaurantId)
-      .eq("active", true)
+      .eq("status", "active")
       .order("created_at", { ascending: true });
 
-    const staff = isOwner
+    const staff = isManager
       ? rawStaff || []
       : ((rawStaff || []) as StaffRow[]).map((member) => ({
           id: member.id,
           restaurant_id: member.restaurant_id,
-          auth_user_id: member.auth_user_id,
           name: member.name,
-          email: member.email,
+          email: null,
           avatar_emoji: member.avatar_emoji,
           role: member.role,
           stripe_payouts_enabled: member.stripe_payouts_enabled,
           active: member.active,
+          status: member.status,
           default_share_pct: member.default_share_pct,
           created_at: member.created_at,
-          phone: member.id === currentUserStaffId ? member.phone : null,
-          iban: member.id === currentUserStaffId ? member.iban : null,
+          phone: member.id === currentUserStaffId ? member.phone : "",
           stripe_payout_id:
             member.id === currentUserStaffId ? member.stripe_payout_id : null,
         }));
@@ -89,17 +87,24 @@ export async function GET() {
       .order("created_at", { ascending: false })
       .limit(50);
 
-    const pendingInvites = isOwner
+    const pendingInvites = isManager
       ? (
           await supabaseAdmin
             .from("invite_code")
-            .select("id, restaurant_id, phone, name, used, expires_at, created_at")
+            .select(
+              "id, restaurant_id, token, phone, name, role, used, expires_at, created_at"
+            )
             .eq("restaurant_id", restaurantId)
             .eq("used", false)
             .gt("expires_at", new Date().toISOString())
             .order("created_at", { ascending: false })
         ).data || []
       : [];
+
+    const currentStaff = ((rawStaff || []) as StaffRow[]).find(
+      (s) => s.id === currentUserStaffId
+    );
+    const needsOnboarding = isManager && !currentStaff?.email;
 
     const ledger = await getRestaurantTipLedger(restaurantId);
     const allTips = (tips || []) as TipRow[];
@@ -136,7 +141,7 @@ export async function GET() {
         : 0;
 
     return NextResponse.json({
-      restaurant: isOwner
+      restaurant: isManager
         ? restaurant
         : {
             ...restaurant,
@@ -148,6 +153,7 @@ export async function GET() {
       pendingInvites,
       currentUserRole,
       currentUserStaffId,
+      needsOnboarding,
       stats: {
         totalCents: ledger.grossTipCents,
         netCents: ledger.availableCents,

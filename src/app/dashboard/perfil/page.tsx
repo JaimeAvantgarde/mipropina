@@ -12,7 +12,6 @@ import type { Staff } from "@/lib/types";
 export default function PerfilPage() {
   const { data, loading: dashLoading } = useDashboard();
 
-  const [iban, setIban] = useState("");
   const [titular, setTitular] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -48,7 +47,6 @@ export default function PerfilPage() {
 
   useEffect(() => {
     if (currentStaff) {
-      setIban(currentStaff.iban || "");
       setEmail(currentStaff.email || "");
       setTitular(currentStaff.name || "");
       if (currentStaff.stripe_payout_id) {
@@ -102,7 +100,6 @@ export default function PerfilPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: currentStaff.id,
-          iban: iban.trim() || null,
           email: email.trim(),
           name: titular.trim(),
         }),
@@ -169,12 +166,6 @@ export default function PerfilPage() {
       <Card>
         <h3 className="text-lg font-bold text-[#0D1B1E] mb-5">Datos de pago</h3>
         <form onSubmit={handleSave} className="flex flex-col gap-4">
-          <Input
-            label="IBAN"
-            placeholder="ES00 0000 0000 0000 0000 0000"
-            value={iban}
-            onChange={(e) => setIban(e.target.value.toUpperCase())}
-          />
           <Input
             label="Nombre del titular"
             placeholder="Nombre y apellidos"

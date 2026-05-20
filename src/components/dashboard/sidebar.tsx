@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -33,16 +32,16 @@ const waiterNavItems = [
 function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurantLogoUrl, staffRole }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const isOwner = staffRole === "owner";
+  const isOwner = staffRole === "manager";
   const navItems = isOwner ? ownerNavItems : waiterNavItems;
   const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
     setLoggingOut(true);
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await fetch("/api/staff/logout", { method: "POST" });
       router.push("/");
+      router.refresh();
     } catch {
       setLoggingOut(false);
     }
@@ -124,7 +123,11 @@ function Sidebar({ isOpen, onToggle, restaurantName, restaurantEmoji, restaurant
                 {restaurantName || "Mi Restaurante"}
               </p>
               <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider text-[#2ECC87] bg-[#2ECC87]/10 px-2 py-0.5 rounded-full">
-                {staffRole === "owner" ? "Gerente" : "Camarero"}
+                {staffRole === "manager"
+                  ? "Gerente"
+                  : staffRole === "kitchen"
+                  ? "Cocina"
+                  : "Camarero"}
               </span>
             </div>
           </div>

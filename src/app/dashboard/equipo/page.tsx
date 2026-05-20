@@ -33,7 +33,7 @@ export default function EquipoPage() {
   if (!data) return null;
 
   const { restaurant, staff, pendingInvites, currentUserRole } = data;
-  const isOwner = currentUserRole === "owner";
+  const isOwner = currentUserRole === "manager";
 
   return (
     <div>

@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SplitConfigCard } from "@/components/dashboard/split-config-card";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 const PRESET_COLORS = ["#2ECC87", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
 
@@ -298,9 +297,9 @@ export default function AjustesPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await fetch("/api/staff/logout", { method: "POST" });
       router.push("/");
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al eliminar el restaurante");
       setDeleting(false);
