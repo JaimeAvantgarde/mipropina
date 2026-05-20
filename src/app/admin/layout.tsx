@@ -1,29 +1,24 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminSession } from "@/lib/admin-auth";
-import { headers } from "next/headers";
 
 export const metadata = {
   title: "Admin — mipropina",
   robots: { index: false, follow: false },
 };
 
+// The middleware (src/middleware.ts) already gates /admin/* behind a valid
+// admin cookie and routes unauthenticated requests to /admin/login. Here we
+// only decide whether to wrap children in the chrome (header + logout). When
+// there is no admin session, the only reachable page under this layout is the
+// login form itself, so we render it bare.
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = await headers();
-  const pathname = headersList.get("x-invoke-path") ?? headersList.get("next-url") ?? "";
-  const isLoginPage = pathname.endsWith("/admin/login");
-
   const admin = await getAdminSession();
 
-  if (!admin && !isLoginPage) {
-    redirect("/admin/login");
-  }
-
-  if (isLoginPage) {
+  if (!admin) {
     return <>{children}</>;
   }
 
@@ -42,7 +37,7 @@ export default async function AdminLayout({
           </Link>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-400 hidden sm:inline">
-              {admin?.user}
+              {admin.user}
             </span>
             <form action="/api/admin/logout" method="POST">
               <button
