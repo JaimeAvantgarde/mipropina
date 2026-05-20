@@ -4,31 +4,31 @@ import {
   ADMIN_COOKIE,
   STAFF_COOKIE,
   verifyToken,
-} from "@/lib/cookies";
+} from "@/lib/tokens";
 
 // ---------------------------------------------------------------------------
 // Auth gating happens at the route handlers (lib/session, lib/admin-auth).
 // The middleware just does a cheap cookie/signature check to redirect early.
 // ---------------------------------------------------------------------------
 
-function hasValidCookie(
+async function hasValidCookie(
   request: NextRequest,
   cookieName: string,
   kind: "admin" | "staff",
   secret: string | undefined
-): boolean {
+): Promise<boolean> {
   if (!secret || secret.length < 32) return false;
   const token = request.cookies.get(cookieName)?.value;
-  return verifyToken(token, kind, secret) !== null;
+  return (await verifyToken(token, kind, secret)) !== null;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // ----- /admin (Mario) -----
   if (pathname.startsWith("/admin")) {
     const isLoginPage = pathname === "/admin/login";
-    const valid = hasValidCookie(
+    const valid = await hasValidCookie(
       request,
       ADMIN_COOKIE,
       "admin",
@@ -55,7 +55,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/onboarding");
 
   if (isStaffArea) {
-    const valid = hasValidCookie(
+    const valid = await hasValidCookie(
       request,
       STAFF_COOKIE,
       "staff",

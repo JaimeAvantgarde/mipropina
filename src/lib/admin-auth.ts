@@ -26,7 +26,10 @@ export type AdminLoginResult =
   | { ok: true; token: string }
   | { ok: false; reason: "missing_config" | "bad_credentials" };
 
-export function checkAdminLogin(user: string, password: string): AdminLoginResult {
+export async function checkAdminLogin(
+  user: string,
+  password: string
+): Promise<AdminLoginResult> {
   const expectedUser = process.env.ADMIN_USER;
   const expectedHash = process.env.ADMIN_PASSWORD_HASH;
   const secret = getSecret();
@@ -39,7 +42,7 @@ export function checkAdminLogin(user: string, password: string): AdminLoginResul
     return { ok: false, reason: "bad_credentials" };
   }
 
-  const token = createToken("admin", expectedUser, ADMIN_TTL_SECONDS, secret);
+  const token = await createToken("admin", expectedUser, ADMIN_TTL_SECONDS, secret);
   return { ok: true, token };
 }
 
@@ -59,7 +62,7 @@ export async function getAdminSession(): Promise<{ user: string } | null> {
 
   const jar = await cookies();
   const token = jar.get(ADMIN_COOKIE)?.value;
-  const payload = verifyToken(token, "admin", secret);
+  const payload = await verifyToken(token, "admin", secret);
   if (!payload) return null;
 
   return { user: payload.sub };

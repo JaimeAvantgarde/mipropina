@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = checkAdminLogin(user, password);
+  const result = await checkAdminLogin(user, password);
   if (!result.ok) {
     if (result.reason === "missing_config") {
       return NextResponse.json(

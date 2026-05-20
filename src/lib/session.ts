@@ -35,7 +35,7 @@ export async function createSessionForStaff(staffId: string): Promise<void> {
   const secret = getSecret();
   if (!secret) throw new Error("SESSION_SECRET no configurado.");
 
-  const token = createToken("staff", staffId, STAFF_TTL_SECONDS, secret);
+  const token = await createToken("staff", staffId, STAFF_TTL_SECONDS, secret);
   const jar = await cookies();
   jar.set(STAFF_COOKIE, token, cookieOptions(STAFF_TTL_SECONDS));
 }
@@ -51,7 +51,7 @@ export async function getStaffSession(): Promise<StaffSession | null> {
 
   const jar = await cookies();
   const token = jar.get(STAFF_COOKIE)?.value;
-  const payload = verifyToken(token, "staff", secret);
+  const payload = await verifyToken(token, "staff", secret);
   if (!payload) return null;
 
   const { data } = await supabaseAdmin
