@@ -3,15 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AcceptInviteClient({
-  token,
-  name,
-}: {
-  token: string;
-  name: string;
-}) {
+export default function ResetForm({ token }: { token: string }) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,18 +13,16 @@ export default function AcceptInviteClient({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-
     if (password !== confirm) {
       setError("Las contraseñas no coinciden.");
       return;
     }
-
     setLoading(true);
     try {
-      const res = await fetch("/api/invite/accept", {
+      const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, email, password }),
+        body: JSON.stringify({ token, password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error.");
@@ -44,37 +35,10 @@ export default function AcceptInviteClient({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 text-left">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Tu nombre
-        </label>
-        <input
-          type="text"
-          value={name}
-          disabled
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Email
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-          required
-          placeholder="tu@correo.com"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Contraseña
+          Nueva contraseña
         </label>
         <input
           type="password"
@@ -85,11 +49,7 @@ export default function AcceptInviteClient({
           required
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          Mínimo 8 caracteres, con al menos una letra y un número.
-        </p>
       </div>
-
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Repite la contraseña
@@ -114,14 +74,10 @@ export default function AcceptInviteClient({
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-medium py-2.5 rounded-lg transition-colors"
       >
-        {loading ? "Creando cuenta…" : "Crear cuenta y entrar"}
+        {loading ? "Guardando…" : "Guardar y entrar"}
       </button>
-
-      <p className="text-xs text-gray-500 text-center">
-        Te enviaremos un email para verificar tu dirección.
-      </p>
     </form>
   );
 }

@@ -31,7 +31,7 @@ export default async function InvitePage({
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurant")
-    .select("id, name, logo_emoji, slug")
+    .select("id, name, logo_emoji")
     .eq("id", invite.restaurant_id)
     .maybeSingle();
 
@@ -40,46 +40,55 @@ export default async function InvitePage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-        <div className="text-5xl mb-4">{restaurant?.logo_emoji ?? "👋"}</div>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-2">{restaurant?.logo_emoji ?? "👋"}</div>
 
-        {isUsed ? (
-          <>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Invitación ya usada
-            </h1>
-            <p className="text-gray-600 text-sm">
-              Esta invitación ya fue aceptada. Si necesitas otro enlace, pide
-              uno nuevo a quien te invitó.
-            </p>
-          </>
-        ) : isExpired ? (
-          <>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Invitación caducada
-            </h1>
-            <p className="text-gray-600 text-sm">
-              El enlace ha caducado. Pide uno nuevo a quien te invitó.
-            </p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
-              Hola {invite.name}
-            </h1>
-            <p className="text-gray-600 text-sm mb-6">
-              Te invitan a{" "}
-              <span className="font-medium text-gray-900">
-                {restaurant?.name ?? "este restaurante"}
-              </span>{" "}
-              como{" "}
-              <span className="font-medium text-gray-900">
-                {ROLE_LABEL[invite.role] ?? invite.role}
-              </span>
-              .
-            </p>
-            <AcceptInviteClient token={token} />
-          </>
+          {isUsed ? (
+            <>
+              <h1 className="text-xl font-bold text-gray-900">
+                Invitación ya usada
+              </h1>
+              <p className="text-sm text-gray-500 mt-2">
+                Esta invitación ya fue aceptada. Si ya tienes cuenta, entra
+                desde{" "}
+                <a href="/entrar" className="text-emerald-600 underline">
+                  /entrar
+                </a>
+                . Si no es tu caso, pide un nuevo enlace a quien te invitó.
+              </p>
+            </>
+          ) : isExpired ? (
+            <>
+              <h1 className="text-xl font-bold text-gray-900">
+                Invitación caducada
+              </h1>
+              <p className="text-sm text-gray-500 mt-2">
+                El enlace ha caducado. Pide uno nuevo a quien te invitó.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-bold text-gray-900">
+                Bienvenido/a, {invite.name}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Te invitan a{" "}
+                <span className="font-medium text-gray-900">
+                  {restaurant?.name ?? "este restaurante"}
+                </span>{" "}
+                como{" "}
+                <span className="font-medium text-gray-900">
+                  {ROLE_LABEL[invite.role] ?? invite.role}
+                </span>
+                .
+              </p>
+            </>
+          )}
+        </div>
+
+        {!isUsed && !isExpired && (
+          <AcceptInviteClient token={token} name={invite.name as string} />
         )}
       </div>
     </div>

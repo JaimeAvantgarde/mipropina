@@ -15,8 +15,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const { error: authError } = await requireOwner(restaurant_id);
+    const { auth, error: authError } = await requireOwner(restaurant_id);
     if (authError) return authError;
+
+    // Block Stripe Connect onboarding until the manager has verified their email,
+    // because Stripe sends KYC and payout emails to that address.
+    const { data: me } = await supabaseAdmin
+      .from("staff")
+      .select("email_verified_at")
+      .eq("id", auth.staffId)
+      .maybeSingle();
+
+    if (!me?.email_verified_at) {
+      return NextResponse.json(
+        {
+          error:
+            "Verifica tu email antes de conectar Stripe. Te enviamos un enlace al crear la cuenta.",
+        },
+        { status: 403 }
+      );
+    }
 
     // Check if restaurant already has a Stripe account
     const { data: restaurant } = await supabaseAdmin

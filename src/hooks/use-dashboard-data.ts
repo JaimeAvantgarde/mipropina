@@ -35,9 +35,9 @@ const mockTips: Tip[] = [
 ];
 
 const mockStaff: Staff[] = [
-  { id: "1", restaurant_id: "demo", name: "Carlos Garcia", email: "carlos@test.com", phone: "+34612345678", avatar_emoji: "👨‍🍳", role: "manager", stripe_payout_id: "acct_1", stripe_payouts_enabled: true, active: true, status: "active", default_share_pct: null, created_at: "2024-01-01" },
-  { id: "2", restaurant_id: "demo", name: "Maria Lopez", email: "maria@test.com", phone: "+34623456789", avatar_emoji: "👩‍🍳", role: "waiter", stripe_payout_id: "acct_2", stripe_payouts_enabled: true, active: true, status: "active", default_share_pct: null, created_at: "2024-02-15" },
-  { id: "3", restaurant_id: "demo", name: "Pedro Ruiz", email: null, phone: "+34634567890", avatar_emoji: "🧑‍🍳", role: "waiter", stripe_payout_id: null, stripe_payouts_enabled: false, active: true, status: "active", default_share_pct: null, created_at: "2024-03-01" },
+  { id: "1", restaurant_id: "demo", name: "Carlos Garcia", email: "carlos@test.com", email_verified_at: "2024-01-01", phone: "+34612345678", avatar_emoji: "👨‍🍳", role: "manager", stripe_payout_id: "acct_1", stripe_payouts_enabled: true, active: true, status: "active", default_share_pct: null, created_at: "2024-01-01" },
+  { id: "2", restaurant_id: "demo", name: "Maria Lopez", email: "maria@test.com", email_verified_at: "2024-02-15", phone: "+34623456789", avatar_emoji: "👩‍🍳", role: "waiter", stripe_payout_id: "acct_2", stripe_payouts_enabled: true, active: true, status: "active", default_share_pct: null, created_at: "2024-02-15" },
+  { id: "3", restaurant_id: "demo", name: "Pedro Ruiz", email: "pedro@test.com", email_verified_at: null, phone: "+34634567890", avatar_emoji: "🧑‍🍳", role: "waiter", stripe_payout_id: null, stripe_payouts_enabled: false, active: true, status: "active", default_share_pct: null, created_at: "2024-03-01" },
 ];
 
 const mockPendingInvites: InviteCode[] = [];
@@ -49,7 +49,8 @@ export type DashboardData = {
   pendingInvites: InviteCode[];
   currentUserRole: "manager" | "waiter" | "kitchen";
   currentUserStaffId: string;
-  needsOnboarding?: boolean;
+  currentUserEmail?: string | null;
+  emailVerified?: boolean;
   stats: {
     totalCents: number;
     netCents: number;

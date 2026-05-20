@@ -56,13 +56,13 @@ export default function Navbar() {
               </a>
             ))}
             <Link
-              href="/auth/login"
+              href="/entrar"
               className="text-sm font-medium text-white/70 transition-colors hover:text-white"
             >
               Acceder
             </Link>
             <Link
-              href="/auth/registro-restaurante"
+              href="/entrar"
               className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-dark transition-all hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(46,204,135,0.3)]"
             >
               Empieza gratis
@@ -115,14 +115,14 @@ export default function Navbar() {
           ))}
           <div className="mt-4 flex flex-col items-center gap-4">
             <Link
-              href="/auth/login"
+              href="/entrar"
               onClick={() => setMobileOpen(false)}
               className="text-lg font-medium text-white/70 transition-colors hover:text-white"
             >
               Acceder
             </Link>
             <Link
-              href="/auth/registro-restaurante"
+              href="/entrar"
               onClick={() => setMobileOpen(false)}
               className="rounded-full bg-primary px-8 py-3 text-lg font-semibold text-dark transition-all hover:bg-primary/90"
             >

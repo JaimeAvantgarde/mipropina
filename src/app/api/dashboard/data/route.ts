@@ -104,7 +104,13 @@ export async function GET() {
     const currentStaff = ((rawStaff || []) as StaffRow[]).find(
       (s) => s.id === currentUserStaffId
     );
-    const needsOnboarding = isManager && !currentStaff?.email;
+    const { data: meRow } = await supabaseAdmin
+      .from("staff")
+      .select("email, email_verified_at")
+      .eq("id", currentUserStaffId)
+      .maybeSingle();
+    const emailVerified = !!meRow?.email_verified_at;
+    const currentStaffEmail = (meRow?.email as string | null) ?? currentStaff?.email ?? null;
 
     const ledger = await getRestaurantTipLedger(restaurantId);
     const allTips = (tips || []) as TipRow[];
@@ -153,7 +159,8 @@ export async function GET() {
       pendingInvites,
       currentUserRole,
       currentUserStaffId,
-      needsOnboarding,
+      currentUserEmail: currentStaffEmail,
+      emailVerified,
       stats: {
         totalCents: ledger.grossTipCents,
         netCents: ledger.availableCents,

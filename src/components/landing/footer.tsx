@@ -11,7 +11,7 @@ const columns = [
     title: "Empresa",
     links: [
       { label: "Contacto", href: "mailto:contacto@mipropina.es" },
-      { label: "Registro", href: "/auth/registro-restaurante" },
+      { label: "Registro", href: "/entrar" },
     ],
   },
   {

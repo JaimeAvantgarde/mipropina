@@ -385,7 +385,7 @@ export default function Hero() {
 
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
               <a
-                href="/auth/registro-restaurante"
+                href="/entrar"
                 className="group w-full rounded-full bg-[#2ECC87] px-8 py-4 text-center text-base font-bold text-[#0D1B1E] shadow-[0_8px_30px_rgba(46,204,135,0.3)] transition-all hover:bg-[#2ECC87]/90 hover:shadow-[0_8px_40px_rgba(46,204,135,0.45)] sm:w-auto"
               >
                 Empieza gratis

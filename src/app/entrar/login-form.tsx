@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function WelcomeForm() {
+export default function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,14 +15,14 @@ export default function WelcomeForm() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/staff/onboarding", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error.");
-      router.replace("/dashboard");
+      router.replace(data.redirect ?? "/dashboard");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error.");
@@ -39,14 +40,24 @@ export default function WelcomeForm() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
           required
-          placeholder="tu@correo.com"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1.5">
-          Este email lo usará Stripe para enviarte los avisos cuando recibas
-          pagos y para pedirte la documentación de verificación.
-        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          Contraseña
+        </label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          required
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+        />
       </div>
 
       {error && (
@@ -60,7 +71,7 @@ export default function WelcomeForm() {
         disabled={loading}
         className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-medium py-2.5 rounded-lg transition-colors"
       >
-        {loading ? "Guardando…" : "Continuar"}
+        {loading ? "Entrando…" : "Entrar"}
       </button>
     </form>
   );

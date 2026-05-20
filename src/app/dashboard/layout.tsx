@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { DashboardContext } from "@/lib/dashboard-context";
 import { PushPrompt } from "@/components/dashboard/push-prompt";
+import { VerifyEmailBanner } from "@/components/dashboard/verify-email-banner";
 
 export default function DashboardLayout({
   children,
@@ -14,13 +14,6 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data, loading, isUsingMock, refetch } = useDashboardData();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (data?.needsOnboarding) {
-      router.replace("/onboarding");
-    }
-  }, [data?.needsOnboarding, router]);
 
   return (
     <DashboardContext.Provider value={{ data, loading, isUsingMock, refetch }}>
@@ -66,6 +59,9 @@ export default function DashboardLayout({
         {/* Main content */}
         <main className="lg:ml-64 min-h-screen pt-16 lg:pt-0">
           <div className="p-6 lg:p-8 max-w-6xl">
+            {data && data.emailVerified === false && (
+              <VerifyEmailBanner email={data.currentUserEmail ?? ""} />
+            )}
             <PushPrompt />
             {children}
           </div>

@@ -53,7 +53,7 @@ export default function CTA() {
             </div>
 
             <a
-              href="/auth/registro-restaurante"
+              href="/entrar"
               className="group flex items-center justify-center w-full rounded-full bg-[#2ECC87] px-8 py-4 text-base font-bold text-[#0D1B1E] shadow-[0_8px_24px_rgba(46,204,135,0.3)] transition-all hover:shadow-[0_8px_32px_rgba(46,204,135,0.45)] hover:scale-[1.02]"
             >
               Crear mi cuenta gratis
