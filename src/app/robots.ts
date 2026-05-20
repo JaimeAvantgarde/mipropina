@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/dashboard/", "/perfil/", "/api/", "/auth/callback"],
+        disallow: ["/dashboard/", "/perfil/", "/api/", "/admin/", "/i/", "/verificar/", "/recuperar/"],
       },
     ],
     sitemap: "https://mipropina.es/sitemap.xml",

@@ -27,7 +27,8 @@ export type Staff = {
   id: string;
   restaurant_id: string;
   name: string;
-  email: string | null;
+  email: string;
+  email_verified_at: string | null;
   phone: string;
   avatar_emoji: string;
   role: StaffRole;

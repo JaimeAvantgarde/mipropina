@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createSessionForStaff } from "@/lib/session";
+import { hashStaffPassword, validatePasswordStrength } from "@/lib/passwords";
+import { sendVerificationEmail } from "@/lib/email";
 
 const AVATAR_BY_ROLE: Record<string, string> = {
   manager: "👤",
@@ -8,8 +11,10 @@ const AVATAR_BY_ROLE: Record<string, string> = {
   kitchen: "👨‍🍳",
 };
 
+const VERIFICATION_TTL_HOURS = 24;
+
 export async function POST(request: Request) {
-  let body: { token?: string };
+  let body: { token?: string; email?: string; password?: string };
   try {
     body = await request.json();
   } catch {
@@ -17,53 +22,71 @@ export async function POST(request: Request) {
   }
 
   const token = (body.token ?? "").trim();
+  const email = (body.email ?? "").trim().toLowerCase();
+  const password = body.password ?? "";
+
   if (!token) {
     return NextResponse.json({ error: "Token requerido." }, { status: 400 });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Email inválido." }, { status: 400 });
+  }
+  const strength = validatePasswordStrength(password);
+  if (!strength.ok) {
+    return NextResponse.json({ error: strength.reason }, { status: 400 });
   }
 
   const { data: invite } = await supabaseAdmin
     .from("invite_code")
-    .select(
-      "id, token, name, phone, role, used, expires_at, restaurant_id"
-    )
+    .select("id, token, name, phone, role, used, expires_at, restaurant_id")
     .eq("token", token)
     .maybeSingle();
 
   if (!invite) {
-    return NextResponse.json(
-      { error: "Invitación no encontrada." },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Invitación no encontrada." }, { status: 404 });
   }
-
   if (invite.used) {
-    return NextResponse.json(
-      { error: "Esta invitación ya fue usada." },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "Esta invitación ya fue usada." }, { status: 409 });
   }
-
   if (new Date(invite.expires_at) < new Date()) {
-    return NextResponse.json(
-      { error: "Esta invitación ha caducado." },
-      { status: 410 }
-    );
+    return NextResponse.json({ error: "Esta invitación ha caducado." }, { status: 410 });
   }
 
   // Phone must still be free.
-  const { data: clash } = await supabaseAdmin
+  const { data: phoneClash } = await supabaseAdmin
     .from("staff")
-    .select("id, status")
+    .select("id")
     .eq("phone", invite.phone)
     .neq("status", "inactive")
     .maybeSingle();
 
-  if (clash) {
+  if (phoneClash) {
     return NextResponse.json(
       { error: "Ese teléfono ya pertenece a otro miembro activo." },
       { status: 409 }
     );
   }
+
+  // Email must be free (case-insensitive)
+  const { data: emailClash } = await supabaseAdmin
+    .from("staff")
+    .select("id")
+    .ilike("email", email)
+    .neq("status", "inactive")
+    .maybeSingle();
+
+  if (emailClash) {
+    return NextResponse.json(
+      { error: "Ese email ya está registrado en otra cuenta." },
+      { status: 409 }
+    );
+  }
+
+  const passwordHash = hashStaffPassword(password);
+  const verificationToken = randomBytes(24).toString("base64url");
+  const verificationExpires = new Date(
+    Date.now() + VERIFICATION_TTL_HOURS * 60 * 60 * 1000
+  ).toISOString();
 
   // 1. Create the staff row
   const { data: staff, error: insertErr } = await supabaseAdmin
@@ -72,6 +95,10 @@ export async function POST(request: Request) {
       restaurant_id: invite.restaurant_id,
       name: invite.name,
       phone: invite.phone,
+      email,
+      password_hash: passwordHash,
+      verification_token: verificationToken,
+      verification_expires_at: verificationExpires,
       role: invite.role,
       avatar_emoji: AVATAR_BY_ROLE[invite.role] ?? "🧑‍🍳",
       status: "active",
@@ -83,7 +110,7 @@ export async function POST(request: Request) {
   if (insertErr || !staff) {
     console.error("[invite/accept] staff insert", insertErr);
     return NextResponse.json(
-      { error: "No se pudo crear tu perfil." },
+      { error: "No se pudo crear tu cuenta." },
       { status: 500 }
     );
   }
@@ -94,7 +121,7 @@ export async function POST(request: Request) {
     .update({ used: true })
     .eq("id", invite.id);
 
-  // 3. If this is a manager invite, link the restaurant
+  // 3. Link manager to restaurant
   if (invite.role === "manager") {
     await supabaseAdmin
       .from("restaurant")
@@ -113,8 +140,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // 5. Managers go through onboarding (collect email for Stripe); rest goes straight to dashboard.
-  const redirect = invite.role === "manager" ? "/onboarding" : "/dashboard";
+  // 5. Fire-and-forget verification email
+  sendVerificationEmail(email, invite.name as string, verificationToken).catch(
+    (e) => console.error("[invite/accept] verification email failed:", e)
+  );
 
-  return NextResponse.json({ ok: true, redirect });
+  return NextResponse.json({ ok: true, redirect: "/dashboard" });
 }
